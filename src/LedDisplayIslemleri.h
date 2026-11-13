@@ -488,16 +488,16 @@ void dotMatrisPervaneAdimi(int step) {
   matrisCiz(MATRIX_A, PROPELLER_FRAME[step % 4]);
 }
 
-// ---------------- Müzik Notası (♫) Bitmap'i (90° Sağa Döndürülmüş) ----------------
+// ---------------- Müzik Notası (♫) Bitmap'i (Kollarında Tek Çizgi, 90° Sağa Döndürülmüş) ----------------
 const byte ICON_MUSIC_NOTE[8] = {
-  0b00100000,
-  0b01110000,
-  0b01111110,
-  0b01111110,
-  0b00000010,
-  0b01100010,
-  0b01111110,
-  0b01111110
+  0b01000000,
+  0b11100000,
+  0b11111111,
+  0b00000011,
+  0b01000011,
+  0b11100011,
+  0b11111111,
+  0b00000000
 };
 
 // B displayinde müzik notası sembolünü (♫) gösterir
