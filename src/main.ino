@@ -297,6 +297,12 @@ int stabilAnalogOku(int pin, int ornekSayisi = 5, int beklemeMs = 20) {
 
 void TaskCore1Kodu(void *pvParameters) {
   unsigned long lastPrintTime = 0;
+  static int secilenFircaNo = 0;
+  static int sonGosterilenFircaNo = 0;
+  static bool herhangiBirFircaDisarida = false;
+  static int fircalarYerindeSayaci = 0;
+  static unsigned long lastNoteAnimTime = 0;
+  static int noteAnimStep = 0;
 
   while (true) {
     // Kapak MOSFET sürücüsünün sürekli aktif (HIGH) kalmasını sağla
@@ -369,8 +375,8 @@ void TaskCore1Kodu(void *pvParameters) {
       int thrFirca = ortamLdr + 1500;
       int thrFirca5 = ortamLdr + 1000;
 
-      bool herhangiBirFircaDisarida = false;
-      int secilenFircaNo = 0;
+      herhangiBirFircaDisarida = false;
+      secilenFircaNo = 0;
 
       if (firca1Ldr <= thrFirca) {
         // Serial.println("Fırça 1 Dışarıda");
@@ -404,9 +410,6 @@ void TaskCore1Kodu(void *pvParameters) {
         herhangiBirFircaDisarida = true;
       }
 
-      static int sonGosterilenFircaNo = 0;
-      static int fircalarYerindeSayaci = 0;
-
       if (herhangiBirFircaDisarida) {
         fircalarYerindeSayaci = 0; // Fırça dışarıda olduğu sürece sayacı sıfırla
 
@@ -428,8 +431,6 @@ void TaskCore1Kodu(void *pvParameters) {
         }
 
         // Kum saati henüz başlamadıysa ve fırçalama aktifse B displayinde müzik notası sağa sola sallansın
-        static unsigned long lastNoteAnimTime = 0;
-        static int noteAnimStep = 0;
         if (!calis && fircalamaAktif) {
           if (millis() - lastNoteAnimTime > 250) { // 250ms ritmik sallanma hızı
             lastNoteAnimTime = millis();
@@ -593,6 +594,22 @@ void TaskCore1Kodu(void *pvParameters) {
           calis = false;
           lc.clearDisplay(MATRIX_A);
           lc.clearDisplay(MATRIX_B);
+
+          // Eğer fırça yerine konmamışsa (hala dışarıdaysa) fırça numarasını ve nota animasyonunu tekrar göster
+          int aktifFirca = (secilenFircaNo > 0) ? secilenFircaNo : sonGosterilenFircaNo;
+          if (kapakAcik && (herhangiBirFircaDisarida || fircalamaAktif) && aktifFirca > 0) {
+            Serial.print("[BUTON] Fırça hala dışarıda (Fırça ");
+            Serial.print(aktifFirca);
+            Serial.println(") -> A displayinde rakam, B displayinde nota animasyonu yeniden gösteriliyor.");
+
+            dotMatrisRakamGoster(aktifFirca);
+            dotMatrisNotaSalla(0);
+            sonGosterilenFircaNo = aktifFirca;
+            noteAnimStep = 1;
+            lastNoteAnimTime = millis();
+          } else {
+            sonGosterilenFircaNo = 0;
+          }
         }
       }
     }
