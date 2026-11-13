@@ -157,30 +157,43 @@ void VeriGonderimi() {
 
 void DonanimIslemleri() {
   donanimIslemleriAktif = true; // TaskCore1'in LED'lere müdahalesini engelle
-  // Serial.println("Donanim islemleri (Fan + Mavi Isik) baslatiliyor...");
+  Serial.println("[DONANIM] Fan ve Mavi Işık açılıyor, A displayinde pervane animasyonu başlıyor...");
 
   // 1. Fan ve Mavi Işık Aç
-  // Serial.println("Fan ve Mavi Isik ACILIYOR");
   digitalWrite(FAN_PIN, HIGH);
   for (int i = 0; i < LED_COUNT; i++) {
     strip.setPixelColor(i, 0, 0, 255); // Mavi
   }
   strip.show();
 
-  // 2. 20 sn Fan Çalışsın
-  // Serial.println("20 saniye Fan calisiyor...");
-  delay(5000);
-  digitalWrite(FAN_PIN, LOW);
-  // Serial.println("Fan KAPANDI");
+  int frame = 0;
 
-  // 3. 10 sn daha Işık kalsın (Toplam 30 sn ışık)
-  // Serial.println("10 saniye daha isik kaliyor...");
-  delay(3000);
+  // 2. Fan Çalışırken (5 sn) A displayinde pervane hızlı dönsün
+  unsigned long fanStart = millis();
+  while (millis() - fanStart < 5000) {
+    dotMatrisPervaneAdimi(frame++);
+    delay(80); // 80ms hızında hızlı dönüş
+  }
+
+  digitalWrite(FAN_PIN, LOW);
+  Serial.println("[DONANIM] Fan kapandı, mavi ışık sönene kadar pervane devam ediyor...");
+
+  // 3. Fan kapandıktan sonra Mavi Işık sönene kadar (3 sn daha) pervane dönmeye devam etsin
+  unsigned long lightStart = millis();
+  while (millis() - lightStart < 3000) {
+    dotMatrisPervaneAdimi(frame++);
+    delay(100); // 100ms hızında dönüş
+  }
+
+  // 4. Mavi Işığı Söndür ve A displayini temizle
   for (int i = 0; i < LED_COUNT; i++) {
     strip.setPixelColor(i, 0, 0, 0); // Söndür
   }
   strip.show();
-  // Serial.println("Isik KAPANDI. Islemler tamam.");
+
+  lc.clearDisplay(MATRIX_A); // Pervaneyi söndür
+  Serial.println("[DONANIM] Mavi ışık kapandı, pervane animasyonu sonlandı.");
+
   donanimIslemleriAktif = false; // TaskCore1 normale dönebilir
 }
 
