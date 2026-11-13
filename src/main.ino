@@ -127,19 +127,28 @@ void VeriGonderimi() {
   donanimIslemleriAktif = true; // TaskCore1'in LED'lere müdahalesini engelle
   lc.clearDisplay(MATRIX_A);    // Üst ekran boş kalsın
   lc.clearDisplay(MATRIX_B);
-  loadingAnimasyonAktif = true; // Loading animasyonunu başlat
 
-  // Serial.println("Veri gonderimi basliyor (Loading animasyonu aktif)...");
+  // 1. Önce Wi-Fi bağlantısını başlat
   WifiBaslat();
+
   bool basarili = false;
-  if (wifiStatus) {
+  // 2. İnternet bağlantısı aktif ise Supabase veri gönderme animasyonunu başlat
+  if (wifiStatus && WiFi.status() == WL_CONNECTED) {
+    Serial.println("[Veri] İnternet aktif. Supabase gönderim animasyonu başlatılıyor...");
+    lc.clearDisplay(MATRIX_A);
+    lc.clearDisplay(MATRIX_B);
+    loadingAnimasyonAktif = true; // Sadece internet aktif olduğunda başlat!
+
     basarili = DatayiGonder(cihazId, fircaId);
+
+    loadingAnimasyonAktif = false; // Gönderim bitince animasyonu durdur
+  } else {
+    Serial.println("[Veri] İnternet bağlantısı yok, veri gönderilemedi!");
   }
+
   WifiDurdur(); // Her durumda WiFi'yi kapat
 
-  loadingAnimasyonAktif = false; // Loading animasyonunu durdur
-
-  // Dot matriste veri gönderim sonucunu göster (Başarılı: ✔, Başarısız: ✖)
+  // 3. Dot matriste veri gönderim sonucunu göster (Başarılı: ✔, Başarısız: ✖)
   dotMatrisVeriGonderimSonuc(basarili);
 
   wifiMesgul = false;            // Sensör okumaya devam et
