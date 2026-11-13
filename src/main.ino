@@ -304,6 +304,7 @@ void TaskCore1Kodu(void *pvParameters) {
   static int fircalarYerindeSayaci = 0;
   static unsigned long lastNoteAnimTime = 0;
   static int noteAnimStep = 0;
+  static bool gulenYuzAktif = false;
 
   while (true) {
     // Kapak MOSFET sürücüsünün sürekli aktif (HIGH) kalmasını sağla
@@ -516,6 +517,24 @@ void TaskCore1Kodu(void *pvParameters) {
           lastUyariZamani = millis();
           Serial.println("[KAPAK] Fırça henüz yerine konmadı! Kapak kapansa bile veri gönderimi veya kurutmaya geçilmiyor.");
         }
+      }
+    }
+
+    // Tüm fırçalar yerinde ve kapak açık ise A displayinde gülen yüz göster
+    if (kapakAcik && !herhangiBirFircaDisarida && !fircalamaAktif && !calis && !wifiMesgul && !donanimIslemleriAktif) {
+      if (!gulenYuzAktif) {
+        Serial.println("[DISPLAY-A] Tüm fırçalar yerinde ve kapak açık -> Gülen Yüz Gösteriliyor :)");
+        dotMatrisGulenYuzGoster();
+        lc.clearDisplay(MATRIX_B);
+        gulenYuzAktif = true;
+        sonGosterilenFircaNo = 0;
+      }
+    } else {
+      if (gulenYuzAktif) {
+        if (!kapakAcik) {
+          lc.clearDisplay(MATRIX_A);
+        }
+        gulenYuzAktif = false;
       }
     }
 

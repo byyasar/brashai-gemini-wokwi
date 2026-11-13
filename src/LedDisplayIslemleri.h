@@ -456,6 +456,25 @@ void dotMatrisRakamGoster(int fircaNo) {
   }
 }
 
+// ---------------- Gülen Yüz (Smiley Face) Bitmap ----------------
+const byte ICON_SMILEY[8] = {
+  0b00111100,
+  0b01000010,
+  0b10100101,
+  0b10010001,
+  0b10010001,
+  0b10100101,
+  0b01000010,
+  0b00111100
+};
+
+// A displayinde gülen yüz sembolünü gösterir
+void dotMatrisGulenYuzGoster() {
+  lc.shutdown(MATRIX_A, false);
+  lc.setIntensity(MATRIX_A, 2);
+  matrisCiz(MATRIX_A, ICON_SMILEY);
+}
+
 // ---------------- Pervane (Fan) Animasyon Kareleri ----------------
 const byte PROPELLER_FRAME[4][8] = {
   // 0: Artı (+)
