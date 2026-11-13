@@ -245,16 +245,16 @@ const byte WIFI_FRAME_3[8] = {
   0b11000000
 };
 
-// Onay Simgesi (Mevcut durumdan 90° sağa döndürülmüş Tik ✔)
+// Onay Simgesi (Elmas kasada tam dik görünen, 45° daha sağa döndürülmüş Tik ✔)
 const byte ICON_CHECKMARK[8] = {
-  0b00001100,
   0b00011000,
-  0b00110000,
-  0b00110000,
   0b00011000,
-  0b00001100,
-  0b00000110,
-  0b00000011
+  0b00011000,
+  0b00011000,
+  0b01111000,
+  0b00111000,
+  0b00000000,
+  0b00000000
 };
 
 // Hata Simgesi (Elmas Kasada Çarpı ✖ Görünen Şekil)
@@ -282,12 +282,12 @@ void dotMatrisWifiBasarili() {
   lc.clearDisplay(MATRIX_B);
   matrisCiz(MATRIX_A, WIFI_FRAME_3);   // Üst matris: Wi-Fi dalgası
 
-  // 90° döndürülmüş Tik animasyonu: adım adım çizilerek belirir
+  // 45° daha sağa döndürülmüş Tik animasyonu: alttan başlayarak adım adım çizilir
   const byte animSteps[4][8] = {
-    { 0b00001100, 0b00011000, 0, 0, 0, 0, 0, 0 },
-    { 0b00001100, 0b00011000, 0b00110000, 0b00110000, 0, 0, 0, 0 },
-    { 0b00001100, 0b00011000, 0b00110000, 0b00110000, 0b00011000, 0b00001100, 0, 0 },
-    { 0b00001100, 0b00011000, 0b00110000, 0b00110000, 0b00011000, 0b00001100, 0b00000110, 0b00000011 }
+    { 0, 0, 0, 0, 0b00011000, 0b00111000, 0, 0 },
+    { 0, 0, 0, 0, 0b01111000, 0b00111000, 0, 0 },
+    { 0, 0, 0b00011000, 0b00011000, 0b01111000, 0b00111000, 0, 0 },
+    { 0b00011000, 0b00011000, 0b00011000, 0b00011000, 0b01111000, 0b00111000, 0, 0 }
   };
 
   for (int step = 0; step < 4; step++) {
