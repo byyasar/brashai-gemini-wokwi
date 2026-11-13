@@ -267,17 +267,20 @@ bool WifiBaglan(int maxRetries = 3, int timeout = 7000) {
   if (wifi_ssid.isEmpty()) {
     Serial.println("[Wi-Fi] Kayıtlı Wi-Fi SSID bulunamadı!");
     wifiStatus = false;
+    dotMatrisWifiBasarisiz();
     return false;
   }
 
   if (WiFi.status() == WL_CONNECTED) {
     wifiStatus = true;
+    dotMatrisWifiBasarili();
     return true;
   }
 
   WiFi.mode(WIFI_STA);
   delay(50);
 
+  int animFrame = 0;
   for (int attempt = 1; attempt <= maxRetries; attempt++) {
     Serial.print("[Wi-Fi] '");
     Serial.print(wifi_ssid);
@@ -291,7 +294,8 @@ bool WifiBaglan(int maxRetries = 3, int timeout = 7000) {
 
     while (WiFi.status() != WL_CONNECTED &&
            millis() - startAttemptTime < timeout) {
-      delay(500);
+      dotMatrisWifiAnimasyonu(animFrame++);
+      delay(300);
       Serial.print(".");
     }
     Serial.println();
@@ -301,18 +305,20 @@ bool WifiBaglan(int maxRetries = 3, int timeout = 7000) {
       Serial.print("[Wi-Fi] Cihaz IP adresi: ");
       Serial.println(WiFi.localIP());
       wifiStatus = true;
+      dotMatrisWifiBasarili(); // Ekranda Wi-Fi + TİK ✔ göster
       return true;
     } else {
       Serial.print("[Wi-Fi] ");
       Serial.print(attempt);
       Serial.println(". deneme başarısız.");
       WiFi.disconnect(true);
-      delay(1000);
+      delay(500);
     }
   }
 
   Serial.println("[Wi-Fi] 3 deneme tamamlandı, bağlantı kurulamadı!");
   wifiStatus = false;
+  dotMatrisWifiBasarisiz(); // Ekranda Çarpı ✖ göster
   return false;
 }
 

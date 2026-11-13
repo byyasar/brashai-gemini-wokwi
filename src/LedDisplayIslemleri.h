@@ -202,4 +202,99 @@ void resetCheck() {
   }
 }
 
+// ---------------- Wi-Fi Dot Matris Görsel Bildirimleri ----------------
+
+void matrisCiz(int addr, const byte bitmap[8]) {
+  for (int row = 0; row < 8; row++) {
+    lc.setRow(addr, row, bitmap[row]);
+  }
+}
+
+// Wi-Fi Animasyon Kareleri (8x8)
+const byte WIFI_FRAME_1[8] = {
+  0b00000000,
+  0b00000000,
+  0b00000000,
+  0b00000000,
+  0b00000000,
+  0b00011000,
+  0b00111100,
+  0b00011000
+};
+
+const byte WIFI_FRAME_2[8] = {
+  0b00000000,
+  0b00000000,
+  0b00111100,
+  0b01000010,
+  0b00000000,
+  0b00011000,
+  0b00111100,
+  0b00011000
+};
+
+const byte WIFI_FRAME_3[8] = {
+  0b01111110,
+  0b10000001,
+  0b00111100,
+  0b01000010,
+  0b00000000,
+  0b00011000,
+  0b00111100,
+  0b00011000
+};
+
+// Onay Simgesi (Kalın Tik ✔)
+const byte ICON_CHECKMARK[8] = {
+  0b00000000,
+  0b00000001,
+  0b00000011,
+  0b00000110,
+  0b10001100,
+  0b11011000,
+  0b01110000,
+  0b00100000
+};
+
+// Hata Simgesi (Çarpı ✖)
+const byte ICON_CROSS[8] = {
+  0b11000011,
+  0b01100110,
+  0b00111100,
+  0b00011000,
+  0b00011000,
+  0b00111100,
+  0b01100110,
+  0b11000011
+};
+
+// Wi-Fi Bağlanıyor animasyon adımı
+void dotMatrisWifiAnimasyonu(int frame) {
+  const byte* f = (frame % 3 == 0) ? WIFI_FRAME_1 : (frame % 3 == 1 ? WIFI_FRAME_2 : WIFI_FRAME_3);
+  matrisCiz(MATRIX_A, f);
+  matrisCiz(MATRIX_B, f);
+}
+
+// Wi-Fi Başarıyla Bağlandı -> Üstte Wi-Fi simgesi, altta TİK ✔
+void dotMatrisWifiBasarili() {
+  lc.clearDisplay(MATRIX_A);
+  lc.clearDisplay(MATRIX_B);
+  matrisCiz(MATRIX_A, WIFI_FRAME_3);   // Üst matris: Wi-Fi dalgası
+  matrisCiz(MATRIX_B, ICON_CHECKMARK); // Alt matris: Onay Tiki ✔
+  delay(1800);                          // 1.8 saniye ekranda göster
+  lc.clearDisplay(MATRIX_A);
+  lc.clearDisplay(MATRIX_B);
+}
+
+// Wi-Fi Başarısız -> Çarpı ✖
+void dotMatrisWifiBasarisiz() {
+  lc.clearDisplay(MATRIX_A);
+  lc.clearDisplay(MATRIX_B);
+  matrisCiz(MATRIX_A, WIFI_FRAME_3);
+  matrisCiz(MATRIX_B, ICON_CROSS);
+  delay(1200);
+  lc.clearDisplay(MATRIX_A);
+  lc.clearDisplay(MATRIX_B);
+}
+
 /*2- Kum saati bitis*/

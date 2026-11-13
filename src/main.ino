@@ -1,8 +1,8 @@
 
-#include "WifiIslemleri.h"
-#include "SupabaseIslemleri.h"
 #include <Adafruit_NeoPixel.h>
 #include <LedDisplayIslemleri.h>
+#include "WifiIslemleri.h"
+#include "SupabaseIslemleri.h"
 #include <MuzikIslemleri.h>
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
