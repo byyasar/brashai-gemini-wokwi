@@ -204,9 +204,16 @@ void resetCheck() {
 
 // ---------------- Wi-Fi Dot Matris Görsel Bildirimleri ----------------
 
+// 8x8 bitmap'i 90 derece sağa (saat yönünde) döndürerek matrise çizer
 void matrisCiz(int addr, const byte bitmap[8]) {
-  for (int row = 0; row < 8; row++) {
-    lc.setRow(addr, row, bitmap[row]);
+  for (int newRow = 0; newRow < 8; newRow++) {
+    byte rowVal = 0;
+    for (int oldRow = 0; oldRow < 8; oldRow++) {
+      if (bitmap[oldRow] & (1 << (7 - newRow))) {
+        rowVal |= (1 << oldRow);
+      }
+    }
+    lc.setRow(addr, newRow, rowVal);
   }
 }
 
