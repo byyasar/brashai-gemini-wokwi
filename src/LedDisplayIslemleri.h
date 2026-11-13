@@ -269,20 +269,20 @@ const byte ICON_CROSS[8] = {
   0b00011000
 };
 
-// Wi-Fi Bağlanıyor animasyon adımı
+// Wi-Fi Bağlanıyor animasyon adımı (Sadece A displayinde dalga gösterir, B displayi temiz kalır)
 void dotMatrisWifiAnimasyonu(int frame) {
   const byte* f = (frame % 3 == 0) ? WIFI_FRAME_1 : (frame % 3 == 1 ? WIFI_FRAME_2 : WIFI_FRAME_3);
   matrisCiz(MATRIX_A, f);
-  matrisCiz(MATRIX_B, f);
+  lc.clearDisplay(MATRIX_B);
 }
 
-// Wi-Fi Başarıyla Bağlandı -> Üstte Wi-Fi simgesi, altta animasyonlu TİK ✔
+// Wi-Fi Başarıyla Bağlandı -> A displayinde Wi-Fi dalgası, B displayinde animasyonlu TİK ✔
 void dotMatrisWifiBasarili() {
   lc.clearDisplay(MATRIX_A);
   lc.clearDisplay(MATRIX_B);
   matrisCiz(MATRIX_A, WIFI_FRAME_3);   // Üst matris: Wi-Fi dalgası
 
-  // 180° çevrilmiş Tik animasyonu: alttan yukarıya doğru adım adım çizilir
+  // 180° çevrilmiş Tik animasyonu: B displayinde alttan yukarıya doğru adım adım çizilir
   const byte animSteps[4][8] = {
     { 0, 0, 0, 0, 0, 0, 0b00011000, 0b00011000 },
     { 0, 0, 0, 0, 0b00011000, 0b00011000, 0b00011000, 0b00011000 },
@@ -299,13 +299,12 @@ void dotMatrisWifiBasarili() {
   lc.clearDisplay(MATRIX_B);
 }
 
-// Wi-Fi Başarısız -> Çarpı ✖
+// Wi-Fi Başarısız -> B displayinde Çarpı ✖ (A displayi temiz)
 void dotMatrisWifiBasarisiz() {
   lc.clearDisplay(MATRIX_A);
   lc.clearDisplay(MATRIX_B);
-  matrisCiz(MATRIX_A, WIFI_FRAME_3);
   matrisCiz(MATRIX_B, ICON_CROSS);
-  delay(1200);
+  delay(1400);
   lc.clearDisplay(MATRIX_A);
   lc.clearDisplay(MATRIX_B);
 }
