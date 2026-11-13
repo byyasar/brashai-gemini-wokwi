@@ -157,7 +157,7 @@ void VeriGonderimi() {
 
 void DonanimIslemleri() {
   donanimIslemleriAktif = true; // TaskCore1'in LED'lere müdahalesini engelle
-  Serial.println("[DONANIM] Fan ve Mavi Işık açılıyor, A displayinde pervane animasyonu başlıyor...");
+  Serial.println("[DONANIM] Fan ve Mavi Işık açılıyor, A ve B displayinde pervane animasyonu başlıyor...");
 
   // 1. Fan ve Mavi Işık Aç
   digitalWrite(FAN_PIN, HIGH);
@@ -191,7 +191,8 @@ void DonanimIslemleri() {
   }
   strip.show();
 
-  lc.clearDisplay(MATRIX_A); // Pervaneyi söndür
+  lc.clearDisplay(MATRIX_A); // Pervaneleri söndür
+  lc.clearDisplay(MATRIX_B);
   Serial.println("[DONANIM] Mavi ışık kapandı, pervane animasyonu sonlandı.");
 
   donanimIslemleriAktif = false; // TaskCore1 normale dönebilir

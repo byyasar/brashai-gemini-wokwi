@@ -481,11 +481,14 @@ const byte PROPELLER_FRAME[4][8] = {
   }
 };
 
-// A displayinde pervane dönme animasyonu adımı
+// Hem A hem B displayinde kurutma (pervane) dönme animasyonu adımı
 void dotMatrisPervaneAdimi(int step) {
   lc.shutdown(MATRIX_A, false);
   lc.setIntensity(MATRIX_A, 2);
+  lc.shutdown(MATRIX_B, false);
+  lc.setIntensity(MATRIX_B, 2);
   matrisCiz(MATRIX_A, PROPELLER_FRAME[step % 4]);
+  matrisCiz(MATRIX_B, PROPELLER_FRAME[step % 4]);
 }
 
 // ---------------- Müzik Notası Sallanma (Dans) Animasyon Kareleri (90° Sağa Döndürülmüş) ----------------
