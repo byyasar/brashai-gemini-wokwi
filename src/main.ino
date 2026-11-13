@@ -391,8 +391,11 @@ void TaskCore1Kodu(void *pvParameters) {
       }
 
       static int sonGosterilenFircaNo = 0;
+      static int fircalarYerindeSayaci = 0;
 
       if (herhangiBirFircaDisarida) {
+        fircalarYerindeSayaci = 0; // Fırça dışarıda olduğu sürece sayacı sıfırla
+
         if (!fircalamaAktif) {
           Serial.print("[FIRCA] Fırça çıkarıldı (");
           Serial.print(fircaId);
@@ -410,32 +413,55 @@ void TaskCore1Kodu(void *pvParameters) {
           lc.clearDisplay(MATRIX_B);
         }
       } else {
-        sonGosterilenFircaNo = 0;
-        // TÜM FIRÇALAR YERİNDE İSE ŞARKI ÇALMAYI DURDUR KONTROLÜ
-        if (mp3.isRunning() || isPlaying || fircalamaAktif) {
-          Serial.println("[FIRCA] Tüm fırçalar yerinde -> Şarkı çalma durduruluyor...");
-          muzikDurdurIstegi = true; // Core 0'a güvenli müzik durdurma komutu
-          while (muzikDurdurIstegi) {
-            delay(10);
+        // Tüm fırçalar yerinde görünüyor, ancak buton basımı veya gölge dalgalanması olabileceği için
+        // hemen veri gönderme! En az 10 döngü (~1 saniye) boyunca doğrula!
+        fircalarYerindeSayaci++;
+
+        if (fircalarYerindeSayaci >= 10) {
+          fircalarYerindeSayaci = 0;
+
+          // Çıkarılmış olan fırçanın LDR sensörünü 5 kez stabil ölçerek gerçekten yerine oturduğunu teyit et
+          bool gercektenYerinde = true;
+          if (sonGosterilenFircaNo > 0) {
+            int kontrolPin = (sonGosterilenFircaNo == 1) ? FIRCA1_PIN :
+                             (sonGosterilenFircaNo == 2) ? FIRCA2_PIN :
+                             (sonGosterilenFircaNo == 3) ? FIRCA3_PIN :
+                             (sonGosterilenFircaNo == 4) ? FIRCA4_PIN : FIRCA5_PIN;
+            int dogrulamaDegeri = stabilAnalogOku(kontrolPin, 5, 20);
+            int esik = (sonGosterilenFircaNo == 5) ? (ortamLdr + 1000) : (ortamLdr + 1500);
+            if (dogrulamaDegeri <= esik) {
+              gercektenYerinde = false; // Fırça hala dışarıda, yanlış alarm!
+              Serial.println("[FIRCA] Yanlış alarm: Fırça hala dışarıda, veri gönderimi yapılmıyor.");
+            }
           }
 
-          // Kum saatini durdur ve dot matrix ekranları söndür
-          if (calis) {
-            calis = false;
-            lc.clearDisplay(MATRIX_A);
-            lc.clearDisplay(MATRIX_B);
-          } else {
-            dotMatrisRakamGoster(0); // A displayindeki rakamı temizle
-          }
+          // YALNIZCA FIRÇA KESİN OLARAK YERİNE KONDUYSA BİTİR VE VERİ GÖNDER!
+          if (gercektenYerinde && (mp3.isRunning() || isPlaying || fircalamaAktif)) {
+            Serial.println("[FIRCA] Fırça kesin olarak yerine kondu -> Müzik durduruluyor ve veri gönderiliyor...");
+            sonGosterilenFircaNo = 0;
+            muzikDurdurIstegi = true; // Core 0'a güvenli müzik durdurma komutu
+            while (muzikDurdurIstegi) {
+              delay(10);
+            }
 
-          if (fircalamaAktif) {
-            VeriGonderimi();
-            fircalamaAktif = false;
-            fircalamaYapildi = true; // Kapak kapanınca fan çalışsın diye işaretle
-          }
+            // Kum saatini durdur ve dot matrix ekranları söndür
+            if (calis) {
+              calis = false;
+              lc.clearDisplay(MATRIX_A);
+              lc.clearDisplay(MATRIX_B);
+            } else {
+              dotMatrisRakamGoster(0); // A displayindeki rakamı temizle
+            }
 
-          fircaId = "";
-          klasor = "";
+            if (fircalamaAktif) {
+              VeriGonderimi();
+              fircalamaAktif = false;
+              fircalamaYapildi = true; // Kapak kapanınca fan çalışsın diye işaretle
+            }
+
+            fircaId = "";
+            klasor = "";
+          }
         }
       }
     }
