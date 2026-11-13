@@ -475,6 +475,25 @@ void dotMatrisGulenYuzGoster() {
   matrisCiz(MATRIX_A, ICON_SMILEY);
 }
 
+// ---------------- Diş Fırçası İkonu (Display B) ----------------
+const byte fircaicon[8] = {
+  0b00000001,
+  0b00000011,
+  0b00100110,
+  0b01011100,
+  0b10111000,
+  0b01110000,
+  0b01100000,
+  0b00000000
+};
+
+// B displayinde fırça ikonunu gösterir
+void dotMatrisFircaIconGoster() {
+  lc.shutdown(MATRIX_B, false);
+  lc.setIntensity(MATRIX_B, 2);
+  matrisCiz(MATRIX_B, fircaicon);
+}
+
 // ---------------- Pervane (Fan) Animasyon Kareleri ----------------
 const byte PROPELLER_FRAME[4][8] = {
   // 0: Artı (+)

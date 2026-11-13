@@ -520,12 +520,12 @@ void TaskCore1Kodu(void *pvParameters) {
       }
     }
 
-    // Tüm fırçalar yerinde ve kapak açık ise A displayinde gülen yüz göster
+    // Tüm fırçalar yerinde ve kapak açık ise A displayinde gülen yüz, B displayinde fırça ikonu göster
     if (kapakAcik && !herhangiBirFircaDisarida && !fircalamaAktif && !calis && !wifiMesgul && !donanimIslemleriAktif) {
       if (!gulenYuzAktif) {
-        Serial.println("[DISPLAY-A] Tüm fırçalar yerinde ve kapak açık -> Gülen Yüz Gösteriliyor :)");
+        Serial.println("[DISPLAY] Tüm fırçalar yerinde ve kapak açık -> A: Gülen Yüz :), B: Fırça İkonu");
         dotMatrisGulenYuzGoster();
-        lc.clearDisplay(MATRIX_B);
+        dotMatrisFircaIconGoster();
         gulenYuzAktif = true;
         sonGosterilenFircaNo = 0;
       }
@@ -533,6 +533,7 @@ void TaskCore1Kodu(void *pvParameters) {
       if (gulenYuzAktif) {
         if (!kapakAcik) {
           lc.clearDisplay(MATRIX_A);
+          lc.clearDisplay(MATRIX_B);
         }
         gulenYuzAktif = false;
       }
