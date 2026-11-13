@@ -488,23 +488,64 @@ void dotMatrisPervaneAdimi(int step) {
   matrisCiz(MATRIX_A, PROPELLER_FRAME[step % 4]);
 }
 
-// ---------------- Müzik Notası (♫) Bitmap'i (Kollarında Tek Çizgi, 90° Sağa Döndürülmüş) ----------------
-const byte ICON_MUSIC_NOTE[8] = {
-  0b01000000,
-  0b11100000,
-  0b11111111,
-  0b00000011,
-  0b01000011,
-  0b11100011,
-  0b11111111,
-  0b00000000
+// ---------------- Müzik Notası Sallanma (Dans) Animasyon Kareleri (90° Sağa Döndürülmüş) ----------------
+const byte MUSIC_NOTE_FRAMES[4][8] = {
+  // 0: Merkez
+  {
+    0b01000000,
+    0b11100000,
+    0b11111111,
+    0b00000011,
+    0b01000011,
+    0b11100011,
+    0b11111111,
+    0b00000000
+  },
+  // 1: Sağa Sallanma
+  {
+    0b01000000,
+    0b11100000,
+    0b11110000,
+    0b00001111,
+    0b01000011,
+    0b11100011,
+    0b11110011,
+    0b00001111
+  },
+  // 2: Merkez
+  {
+    0b01000000,
+    0b11100000,
+    0b11111111,
+    0b00000011,
+    0b01000011,
+    0b11100011,
+    0b11111111,
+    0b00000000
+  },
+  // 3: Sola Sallanma
+  {
+    0b01000000,
+    0b11101111,
+    0b11110011,
+    0b00000011,
+    0b01000011,
+    0b11101111,
+    0b11110000,
+    0b00000000
+  }
 };
 
-// B displayinde müzik notası sembolünü (♫) gösterir
-void dotMatrisNotaGoster() {
+// B displayinde sağa sola sallanan müzik notası animasyonu adımı
+void dotMatrisNotaSalla(int step) {
   lc.shutdown(MATRIX_B, false);
   lc.setIntensity(MATRIX_B, 2);
-  matrisCiz(MATRIX_B, ICON_MUSIC_NOTE);
+  matrisCiz(MATRIX_B, MUSIC_NOTE_FRAMES[step % 4]);
+}
+
+// B displayinde sabit müzik notası sembolünü (♫) gösterir
+void dotMatrisNotaGoster() {
+  dotMatrisNotaSalla(0);
 }
 
 /*2- Kum saati bitis*/

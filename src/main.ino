@@ -417,14 +417,23 @@ void TaskCore1Kodu(void *pvParameters) {
           muzikBaslatIstegi = true; // Core 0'a güvenli müzik başlatma komutu
         }
 
-        // Kum saati henüz başlamadıysa A displayinde fırça numarasını, B displayinde müzik notasını göster
+        // Kum saati henüz başlamadıysa A displayinde fırça numarasını göster
         if (!calis && secilenFircaNo != sonGosterilenFircaNo) {
           sonGosterilenFircaNo = secilenFircaNo;
           Serial.print("[DISPLAY-A] Fırça Numarası: ");
           Serial.print(secilenFircaNo);
-          Serial.println(" | [DISPLAY-B] Müzik Notası Gösteriliyor");
+          Serial.println(" | [DISPLAY-B] Müzik Notası Sallanıyor");
           dotMatrisRakamGoster(secilenFircaNo);
-          dotMatrisNotaGoster();
+        }
+
+        // Kum saati henüz başlamadıysa ve fırçalama aktifse B displayinde müzik notası sağa sola sallansın
+        static unsigned long lastNoteAnimTime = 0;
+        static int noteAnimStep = 0;
+        if (!calis && fircalamaAktif) {
+          if (millis() - lastNoteAnimTime > 250) { // 250ms ritmik sallanma hızı
+            lastNoteAnimTime = millis();
+            dotMatrisNotaSalla(noteAnimStep++);
+          }
         }
       } else {
         // Tüm fırçalar yerinde görünüyor, ancak buton basımı veya gölge dalgalanması olabileceği için
