@@ -595,36 +595,62 @@ void TaskCore1Kodu(void *pvParameters) {
           }
           resetTime();
           calis = true; // Kum saatini başlat
+
+          // Eğer fırça dışarıdaysa ve müzik durdurulmuşsa müziği de yeniden başlat
+          if (fircalamaAktif && !mp3.isRunning() && !isPlaying) {
+            Serial.println("[BUTON] Play -> Fırça dışarıda ve müzik durmuştu, müzik yeniden başlatılıyor...");
+            muzikBaslatIstegi = true;
+          }
         }
       }
 
       // DURDUR BUTONU (Yalnızca tek basıldığında)
+      // 1) Kum saati başlamamışsa -> Müziği durdurur
+      // 2) Kum saati çalışıyorsa:
+      //    - İlk basışta -> Kum saatini durdurur (müzik devam eder)
+      //    - İkinci basışta -> Müziği durdurur
       if (b2 == HIGH) {
         if (millis() - lastDebounce > DEBOUNCE_THRESHOLD) {
           lastDebounce = millis();
-          Serial.println("[BUTON] Stop -> Kum Saati Durduruldu");
-          calis = false;
 
-          // Eğer fırça yerine konmamışsa (Kapak açık VEYA kapalı olsun) fırça numarasını silme, tekrar göster!
           int aktifFirca = (secilenFircaNo > 0) ? secilenFircaNo : sonGosterilenFircaNo;
           bool fircaDisarida = (fircalamaAktif && aktifFirca > 0);
 
-          if (fircaDisarida) {
-            Serial.print("[BUTON] Fırça hala dışarıda (Fırça ");
-            Serial.print(aktifFirca);
-            Serial.println(") -> A displayinde rakam, B displayinde nota animasyonu gösterilmeye devam ediyor.");
+          if (calis) {
+            // DURUM 1: Kum saati çalışıyorken basıldı -> İLK BASIŞ: Yalnızca kum saatini durdur
+            Serial.println("[BUTON] Stop (1. Basış) -> Kum Saati Durduruldu, Müzik Devam Ediyor");
+            calis = false;
 
-            lc.clearDisplay(MATRIX_A);
-            lc.clearDisplay(MATRIX_B);
-            dotMatrisRakamGoster(aktifFirca);
-            dotMatrisNotaSalla(0);
-            sonGosterilenFircaNo = aktifFirca;
-            noteAnimStep = 1;
-            lastNoteAnimTime = millis();
+            if (fircaDisarida) {
+              Serial.print("[BUTON] Fırça hala dışarıda (Fırça ");
+              Serial.print(aktifFirca);
+              Serial.println(") -> A displayinde rakam, B displayinde nota animasyonu gösterilmeye devam ediyor.");
+
+              lc.clearDisplay(MATRIX_A);
+              lc.clearDisplay(MATRIX_B);
+              dotMatrisRakamGoster(aktifFirca);
+              dotMatrisNotaSalla(0);
+              sonGosterilenFircaNo = aktifFirca;
+              noteAnimStep = 1;
+              lastNoteAnimTime = millis();
+            } else {
+              lc.clearDisplay(MATRIX_A);
+              lc.clearDisplay(MATRIX_B);
+              sonGosterilenFircaNo = 0;
+            }
           } else {
-            lc.clearDisplay(MATRIX_A);
-            lc.clearDisplay(MATRIX_B);
-            sonGosterilenFircaNo = 0;
+            // DURUM 2: Kum saati çalışmıyorken basıldı (Play'e hiç basılmamış veya 2. kez Stop'a basılmış) -> MÜZİĞİ DURDUR
+            if (fircaDisarida) {
+              Serial.println("[BUTON] Stop (Kum saati kapalıyken / 2. basış) -> Müzik Durduruluyor");
+              muzikDurdurIstegi = true;  // Core 0'a müzik durdurma komutu
+              lc.clearDisplay(MATRIX_B); // Müzik durduğu için nota animasyonunu söndür
+              dotMatrisRakamGoster(aktifFirca); // A displayindeki fırça numarası kalsın
+            } else {
+              // Fırça yerindeyse ve kum saati zaten kapalıysa ekranları temizle
+              lc.clearDisplay(MATRIX_A);
+              lc.clearDisplay(MATRIX_B);
+              sonGosterilenFircaNo = 0;
+            }
           }
         }
       }
@@ -697,8 +723,8 @@ void TaskCore1Kodu(void *pvParameters) {
       // //Serial.println(gravity);
       bool moved = updateMatrix();
       bool dropped = dropParticle();
-    } else if (fircalamaAktif && !wifiMesgul && !donanimIslemleriAktif) {
-      // Kum saati çalışmıyorken ve fırça henüz yerine konmamışsa (Kapak açık VEYA kapalı olsun)
+    } else if (fircalamaAktif && !wifiMesgul && !donanimIslemleriAktif && (isPlaying || mp3.isRunning())) {
+      // Kum saati çalışmıyorken, fırça henüz yerine konmamışsa VE müzik çalıyorsa
       // B displayinde müzik notası sallanmaya kesintisiz devam etsin
       if (millis() - lastNoteAnimTime > 250) { // 250ms ritmik sallanma hızı
         lastNoteAnimTime = millis();
