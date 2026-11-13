@@ -492,6 +492,7 @@ void dotMatrisPervaneAdimi(int step) {
 }
 
 // ---------------- Müzik Notası Sallanma (Dans) Animasyon Kareleri (90° Sağa Döndürülmüş) ----------------
+// Notanın hem alt tarafı (kafalar) hem üst kolları komple sağa-sola sallanır
 const byte MUSIC_NOTE_FRAMES[4][8] = {
   // 0: Merkez
   {
@@ -504,16 +505,16 @@ const byte MUSIC_NOTE_FRAMES[4][8] = {
     0b11111111,
     0b00000000
   },
-  // 1: Sağa Sallanma
+  // 1: Sağa Sallanma (Tüm gövde ve alt taraf sağa kayar)
   {
+    0b00000000,
     0b01000000,
     0b11100000,
-    0b11110000,
-    0b00001111,
+    0b11111111,
+    0b00000011,
     0b01000011,
     0b11100011,
-    0b11110011,
-    0b00001111
+    0b11111111
   },
   // 2: Merkez
   {
@@ -526,15 +527,15 @@ const byte MUSIC_NOTE_FRAMES[4][8] = {
     0b11111111,
     0b00000000
   },
-  // 3: Sola Sallanma
+  // 3: Sola Sallanma (Tüm gövde ve alt taraf sola kayar)
   {
-    0b01000000,
-    0b11101111,
-    0b11110011,
+    0b11100000,
+    0b11111111,
     0b00000011,
     0b01000011,
-    0b11101111,
-    0b11110000,
+    0b11100011,
+    0b11111111,
+    0b00000000,
     0b00000000
   }
 };
