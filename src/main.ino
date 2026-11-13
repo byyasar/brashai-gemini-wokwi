@@ -430,14 +430,6 @@ void TaskCore1Kodu(void *pvParameters) {
           Serial.println(" | [DISPLAY-B] Müzik Notası Sallanıyor");
           dotMatrisRakamGoster(secilenFircaNo);
         }
-
-        // Kum saati henüz başlamadıysa ve fırçalama aktifse B displayinde müzik notası sağa sola sallansın
-        if (!calis && fircalamaAktif) {
-          if (millis() - lastNoteAnimTime > 250) { // 250ms ritmik sallanma hızı
-            lastNoteAnimTime = millis();
-            dotMatrisNotaSalla(noteAnimStep++);
-          }
-        }
       } else {
         // Tüm fırçalar yerinde görünüyor, ancak buton basımı veya gölge dalgalanması olabileceği için
         // hemen veri gönderme! En az 10 döngü (~1 saniye) boyunca doğrula!
@@ -682,6 +674,13 @@ void TaskCore1Kodu(void *pvParameters) {
       // //Serial.println(gravity);
       bool moved = updateMatrix();
       bool dropped = dropParticle();
+    } else if (fircalamaAktif && !wifiMesgul && !donanimIslemleriAktif) {
+      // Kum saati çalışmıyorken ve fırça henüz yerine konmamışsa (Kapak açık VEYA kapalı olsun)
+      // B displayinde müzik notası sallanmaya kesintisiz devam etsin
+      if (millis() - lastNoteAnimTime > 250) { // 250ms ritmik sallanma hızı
+        lastNoteAnimTime = millis();
+        dotMatrisNotaSalla(noteAnimStep++);
+      }
     }
     /*Kum saati bitis*/
 
