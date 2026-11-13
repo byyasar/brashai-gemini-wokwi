@@ -203,76 +203,70 @@ void resetCheck() {
 }
 
 // ---------------- Wi-Fi Dot Matris Görsel Bildirimleri ----------------
+// Kum saati kasasındaki 45° elmas (baklava) montaj açısına göre optimize edilmiş çizimler
 
-// 8x8 bitmap'i 90 derece sağa (saat yönünde) döndürerek matrise çizer
 void matrisCiz(int addr, const byte bitmap[8]) {
-  for (int newRow = 0; newRow < 8; newRow++) {
-    byte rowVal = 0;
-    for (int oldRow = 0; oldRow < 8; oldRow++) {
-      if (bitmap[oldRow] & (1 << (7 - newRow))) {
-        rowVal |= (1 << oldRow);
-      }
-    }
-    lc.setRow(addr, newRow, rowVal);
+  for (int row = 0; row < 8; row++) {
+    lc.setRow(addr, row, bitmap[row]);
   }
 }
 
-// Wi-Fi Animasyon Kareleri (8x8)
+// Wi-Fi Animasyon Kareleri (45° Diyagonal / Elmas Açı)
 const byte WIFI_FRAME_1[8] = {
   0b00000000,
+  0b01100000,
+  0b01100000,
   0b00000000,
   0b00000000,
   0b00000000,
   0b00000000,
-  0b00011000,
-  0b00111100,
-  0b00011000
+  0b00000000
 };
 
 const byte WIFI_FRAME_2[8] = {
+  0b00001000,
+  0b01101000,
+  0b01110000,
+  0b00100000,
+  0b11000000,
   0b00000000,
   0b00000000,
-  0b00111100,
-  0b01000010,
-  0b00000000,
-  0b00011000,
-  0b00111100,
-  0b00011000
+  0b00000000
 };
 
 const byte WIFI_FRAME_3[8] = {
-  0b01111110,
-  0b10000001,
-  0b00111100,
-  0b01000010,
-  0b00000000,
-  0b00011000,
-  0b00111100,
-  0b00011000
+  0b00001001,
+  0b01101001,
+  0b01110010,
+  0b00100100,
+  0b11001000,
+  0b00010000,
+  0b00100000,
+  0b11000000
 };
 
-// Onay Simgesi (Kalın Tik ✔)
+// Onay Simgesi (45° Elmas Açısına Uygun Dik Tik ✔)
 const byte ICON_CHECKMARK[8] = {
-  0b00000000,
   0b00000001,
   0b00000011,
-  0b00000110,
-  0b10001100,
-  0b11011000,
-  0b01110000,
-  0b00100000
+  0b10000110,
+  0b11001100,
+  0b01111000,
+  0b00110000,
+  0b00000000,
+  0b00000000
 };
 
-// Hata Simgesi (Çarpı ✖)
+// Hata Simgesi (Elmas Kasada Çarpı ✖ Görünen Şekil)
 const byte ICON_CROSS[8] = {
-  0b11000011,
-  0b01100110,
-  0b00111100,
   0b00011000,
   0b00011000,
-  0b00111100,
-  0b01100110,
-  0b11000011
+  0b00011000,
+  0b11111111,
+  0b11111111,
+  0b00011000,
+  0b00011000,
+  0b00011000
 };
 
 // Wi-Fi Bağlanıyor animasyon adımı
