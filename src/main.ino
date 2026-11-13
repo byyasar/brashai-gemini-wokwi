@@ -603,7 +603,7 @@ void TaskCore1Kodu(void *pvParameters) {
       apBasiliTutmaZamani = 0;
       sonSaniyeSayaci = -1;
 
-      // OYNAT BUTONU (Yalnızca tek basıldığında) - Kum saatini başlatır
+      // OYNAT BUTONU (Yalnızca tek basıldığında) - Yalnızca kum saatini başlatır
       if (b1 == HIGH) {
         if (millis() - lastDebounce > DEBOUNCE_THRESHOLD) {
           lastDebounce = millis();
@@ -614,13 +614,7 @@ void TaskCore1Kodu(void *pvParameters) {
             lc.setIntensity(i, 2);
           }
           resetTime();
-          calis = true; // Kum saatini başlat
-
-          // Eğer fırça dışarıdaysa ve müzik durdurulmuşsa müziği de yeniden başlat
-          if (fircalamaAktif && !mp3.isRunning() && !isPlaying) {
-            Serial.println("[BUTON] Play -> Fırça dışarıda ve müzik durmuştu, müzik yeniden başlatılıyor...");
-            muzikBaslatIstegi = true;
-          }
+          calis = true; // Yalnızca kum saatini başlat (müziğe müdahale etmez)
         }
       }
 
@@ -685,9 +679,14 @@ void TaskCore1Kodu(void *pvParameters) {
         bool fircaDisarida = (fircalamaAktif && (herhangiBirFircaDisarida || aktifFirca > 0));
 
         if (fircaDisarida) {
-          // Fırça yerinde değilken: Şarkıyı değiştir!
-          Serial.println("[BUTON] Fırça dışarıda + Refresh -> Sıradaki şarkıya geçiliyor...");
+          // Fırça yerinde değilken: Müzik durmuşsa da çalıyor olsa da şarkıyı başlat / değiştir!
+          Serial.println("[BUTON] Fırça dışarıda + Random -> Müzik yeniden başlatılıyor / sıradaki şarkıya geçiliyor...");
           sonrakiSarkiyaGec = true;
+          if (!calis) {
+            dotMatrisNotaSalla(0); // Nota animasyonunu B ekranında hemen canlandır
+            noteAnimStep = 1;
+            lastNoteAnimTime = millis();
+          }
         } else if (!kapakAcik) {
           // Kapak KAPALI ise: 20 sn Kum Saati
           Serial.println("[BUTON] Kapak Kapali + Refresh -> 20 sn Kum Saati baslatiliyor");
