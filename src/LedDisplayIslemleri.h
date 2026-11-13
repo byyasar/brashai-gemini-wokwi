@@ -363,4 +363,75 @@ void dotMatrisVeriGonderimSonuc(bool basarili) {
   lc.clearDisplay(MATRIX_B);
 }
 
+// ---------------- 1-5 Fırça Rakam Bitmapleri ----------------
+const byte DIGIT_NUMBERS[6][8] = {
+  { 0, 0, 0, 0, 0, 0, 0, 0 }, // 0: Boş
+  // 1
+  {
+    0b00011000,
+    0b00111000,
+    0b01111000,
+    0b00011000,
+    0b00011000,
+    0b00011000,
+    0b00011000,
+    0b01111110
+  },
+  // 2
+  {
+    0b00111100,
+    0b01100110,
+    0b00000110,
+    0b00001100,
+    0b00011000,
+    0b00110000,
+    0b01100000,
+    0b01111110
+  },
+  // 3
+  {
+    0b00111100,
+    0b01100110,
+    0b00000110,
+    0b00011100,
+    0b00000110,
+    0b00000110,
+    0b01100110,
+    0b00111100
+  },
+  // 4
+  {
+    0b00001100,
+    0b00011100,
+    0b00111100,
+    0b01101100,
+    0b11001100,
+    0b11111110,
+    0b00001100,
+    0b00001100
+  },
+  // 5
+  {
+    0b01111110,
+    0b01100000,
+    0b01100000,
+    0b01111100,
+    0b00000110,
+    0b00000110,
+    0b01100110,
+    0b00111100
+  }
+};
+
+// A displayinde kaldırılan fırçanın numarasını (1-5) gösterir
+void dotMatrisRakamGoster(int fircaNo) {
+  if (fircaNo >= 1 && fircaNo <= 5) {
+    lc.shutdown(MATRIX_A, false);
+    lc.setIntensity(MATRIX_A, 2);
+    matrisCiz(MATRIX_A, DIGIT_NUMBERS[fircaNo]);
+  } else {
+    lc.clearDisplay(MATRIX_A);
+  }
+}
+
 /*2- Kum saati bitis*/

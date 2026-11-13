@@ -347,33 +347,41 @@ void TaskCore1Kodu(void *pvParameters) {
       int thrFirca5 = ortamLdr + 1000;
 
       bool herhangiBirFircaDisarida = false;
+      int secilenFircaNo = 0;
 
       if (firca1Ldr <= thrFirca) {
         // Serial.println("Fırça 1 Dışarıda");
         fircaId = "Firca1";
         klasor = "/1";
+        secilenFircaNo = 1;
         herhangiBirFircaDisarida = true;
       } else if (firca2Ldr <= thrFirca) {
         // Serial.println("Fırça 2 Dışarıda");
         fircaId = "Firca2";
         klasor = "/2";
+        secilenFircaNo = 2;
         herhangiBirFircaDisarida = true;
       } else if (firca3Ldr <= thrFirca) {
         // Serial.println("Fırça 3 Dışarıda");
         fircaId = "Firca3";
         klasor = "/3";
+        secilenFircaNo = 3;
         herhangiBirFircaDisarida = true;
       } else if (firca4Ldr <= thrFirca) {
         // Serial.println("Fırça 4 Dışarıda");
         fircaId = "Firca4";
         klasor = "/4";
+        secilenFircaNo = 4;
         herhangiBirFircaDisarida = true;
       } else if (firca5Ldr <= thrFirca5) {
         // Serial.println("Fırça 5 Dışarıda");
         fircaId = "Firca5";
         klasor = "/5";
+        secilenFircaNo = 5;
         herhangiBirFircaDisarida = true;
       }
+
+      static int sonGosterilenFircaNo = 0;
 
       if (herhangiBirFircaDisarida) {
         if (!fircalamaAktif) {
@@ -383,7 +391,17 @@ void TaskCore1Kodu(void *pvParameters) {
           fircalamaAktif = true;
           muzikBaslatIstegi = true; // Core 0'a güvenli müzik başlatma komutu
         }
+
+        // Kum saati henüz başlamadıysa A displayinde fırça numarasını göster
+        if (!calis && secilenFircaNo != sonGosterilenFircaNo) {
+          sonGosterilenFircaNo = secilenFircaNo;
+          Serial.print("[DISPLAY-A] Fırça Numarası Gösteriliyor: ");
+          Serial.println(secilenFircaNo);
+          dotMatrisRakamGoster(secilenFircaNo);
+          lc.clearDisplay(MATRIX_B);
+        }
       } else {
+        sonGosterilenFircaNo = 0;
         // TÜM FIRÇALAR YERİNDE İSE ŞARKI ÇALMAYI DURDUR KONTROLÜ
         if (mp3.isRunning() || isPlaying || fircalamaAktif) {
           Serial.println("[FIRCA] Tüm fırçalar yerinde -> Şarkı çalma durduruluyor...");
@@ -397,6 +415,8 @@ void TaskCore1Kodu(void *pvParameters) {
             calis = false;
             lc.clearDisplay(MATRIX_A);
             lc.clearDisplay(MATRIX_B);
+          } else {
+            dotMatrisRakamGoster(0); // A displayindeki rakamı temizle
           }
 
           if (fircalamaAktif) {
