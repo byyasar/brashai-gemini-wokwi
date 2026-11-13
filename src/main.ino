@@ -1,0 +1,612 @@
+
+#include "WifiIslemleri.h"
+#include "SupabaseIslemleri.h"
+#include <Adafruit_NeoPixel.h>
+#include <LedDisplayIslemleri.h>
+#include <MuzikIslemleri.h>
+#include "soc/soc.h"
+#include "soc/rtc_cntl_reg.h"
+
+TaskHandle_t TaskCore0;
+TaskHandle_t TaskCore1;
+
+#define BTNPLAY_PIN 22
+#define BTNSTOP_PIN 39
+#define BTNREFRESH_PIN 36
+#define FIRCA1_PIN 25
+#define FIRCA2_PIN 4
+#define FIRCA3_PIN 34
+#define FIRCA4_PIN 26
+#define FIRCA5_PIN 12
+#define ORTAMLDR_PIN 27
+#define LED_COUNT 9
+#define FAN_PIN 2
+#define KAPAK_PIN 21
+#define SERITLED_PIN 17
+#define KAPAK_MOSFET_PIN 16 // Kapak gerilimi MOSFET sürücü pini
+
+// Kapak Sensörü Mantığı (Kapak açıkken 1 / HIGH, kapalıyken 0 / LOW)
+#define KAPAK_ACIK_SEVIYE 1
+
+u8_t b1 = 0;
+u8_t b2 = 0;
+u8_t b3 = 0;
+u8_t kapak = 0;
+u16_t firca1Ldr = 0;
+u16_t firca2Ldr = 0;
+u16_t firca3Ldr = 0;
+u16_t firca4Ldr = 0;
+u16_t firca5Ldr = 0;
+u16_t ortamLdr = 0;
+
+u16_t LdrEsikDeger = 2000;
+
+Adafruit_NeoPixel strip(LED_COUNT, SERITLED_PIN, NEO_GRB + NEO_KHZ800);
+
+String klasor = "";
+String fircaId = "";
+String cihazId = "Cihaz1";
+
+void setup() {
+  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); // Düşük voltaj/brownout resetini engelle
+  Serial.begin(115200);
+  delay(300);
+  Serial.println("\n[BrashAI] Sistem baslatiliyor...");
+
+  // Donanım pinleri
+  pinMode(BTNPLAY_PIN, INPUT);
+  pinMode(BTNSTOP_PIN, INPUT);
+  pinMode(BTNREFRESH_PIN, INPUT);
+  pinMode(FIRCA1_PIN, INPUT);
+  pinMode(FIRCA2_PIN, INPUT);
+  pinMode(FIRCA3_PIN, INPUT);
+  pinMode(FIRCA4_PIN, INPUT);
+  pinMode(FIRCA5_PIN, INPUT);
+  pinMode(ORTAMLDR_PIN, INPUT);
+  pinMode(FAN_PIN, OUTPUT);
+  pinMode(KAPAK_PIN, INPUT_PULLUP); // Dahili Pull-Up ile kararlı kapak okuma
+
+  // NeoPixel Şerit LED Başlatma
+  strip.begin();
+  strip.setBrightness(150);
+  strip.show(); // Başlangıçta tüm LED'leri söndür
+
+  /*Kum saati baslangıcı*/
+  for (byte i = 0; i < 2; i++) {
+    lc.shutdown(i, false);
+    lc.setIntensity(i, 2);
+  }
+  resetTime();
+  /*Kum saati bitis*/
+
+  // İlk açılışta Wi-Fi kontrolü (Bağlanamazsa AP moduna geçer)
+  WifiIlkAcilisKontrol();
+
+  SPI.begin(VS1053_SCK, VS1053_MISO, VS1053_MOSI);
+  if (!SD.begin(SD_CS, SPI, 1000000)) { // 1 MHz SPI hızı
+    // Serial.println("SD Card initialization failed!");
+    while (!SD.begin(SD_CS))
+      ;
+  }
+
+  // SD kart işlemleri tamamlandı -> Kapak gerilimi MOSFET sürücüsünü aktif et (GPIO 1)
+  pinMode(KAPAK_MOSFET_PIN, OUTPUT);
+  digitalWrite(KAPAK_MOSFET_PIN, HIGH);
+  delay(100); // Gerilimin oturması için kısa bekleme
+
+  delay(500);
+  mp3.begin();
+  mp3.setVolume(volume);
+
+  // Serial.println("lcd temizleniyor...");
+  lc.clearDisplay(MATRIX_A);
+  lc.clearDisplay(MATRIX_B);
+
+  delay(500);
+  // Serial.println("ESP32 Dual-Core FreeRTOS başlıyor...");
+
+  // Core 0’a görev atama
+  xTaskCreatePinnedToCore(TaskCore0Kodu, "TaskCore 0", 8192, NULL, 1,
+                          &TaskCore0, 0);
+  // Core 1’e görev atama
+  xTaskCreatePinnedToCore(TaskCore1Kodu, "TaskCore 1", 8192, NULL, 1,
+                          &TaskCore1, 1);
+}
+
+// ---------- Yardımcı Fonksiyonlar ----------
+bool wifiMesgul =
+    false; // WiFi işlemleri sırasında sensör okumayı durdurmak için flag
+bool donanimIslemleriAktif =
+    false; // Donanım işlemleri (Fan/Işık) sırasında TaskCore1'in LED'leri
+           // kapatmasını engellemek için
+volatile bool loadingAnimasyonAktif =
+    false; // Veri gönderimi sırasında loading animasyonu için
+
+void VeriGonderimi() {
+  wifiMesgul = true;            // Sensör okumayı durdur
+  donanimIslemleriAktif = true; // TaskCore1'in LED'lere müdahalesini engelle
+  loadingAnimasyonAktif = true; // Loading animasyonunu başlat
+
+  // Serial.println("Veri gonderimi basliyor (Loading animasyonu aktif)...");
+  WifiBaslat();
+  if (wifiStatus) {
+    DatayiGonder(cihazId, fircaId);
+  }
+  WifiDurdur(); // Her durumda WiFi'yi kapat
+
+  loadingAnimasyonAktif = false; // Loading animasyonunu durdur
+  wifiMesgul = false;            // Sensör okumaya devam et
+  donanimIslemleriAktif = false; // TaskCore1 normale dönebilir
+}
+
+void DonanimIslemleri() {
+  donanimIslemleriAktif = true; // TaskCore1'in LED'lere müdahalesini engelle
+  // Serial.println("Donanim islemleri (Fan + Mavi Isik) baslatiliyor...");
+
+  // 1. Fan ve Mavi Işık Aç
+  // Serial.println("Fan ve Mavi Isik ACILIYOR");
+  digitalWrite(FAN_PIN, HIGH);
+  for (int i = 0; i < LED_COUNT; i++) {
+    strip.setPixelColor(i, 0, 0, 255); // Mavi
+  }
+  strip.show();
+
+  // 2. 20 sn Fan Çalışsın
+  // Serial.println("20 saniye Fan calisiyor...");
+  delay(5000);
+  digitalWrite(FAN_PIN, LOW);
+  // Serial.println("Fan KAPANDI");
+
+  // 3. 10 sn daha Işık kalsın (Toplam 30 sn ışık)
+  // Serial.println("10 saniye daha isik kaliyor...");
+  delay(3000);
+  for (int i = 0; i < LED_COUNT; i++) {
+    strip.setPixelColor(i, 0, 0, 0); // Söndür
+  }
+  strip.show();
+  // Serial.println("Isik KAPANDI. Islemler tamam.");
+  donanimIslemleriAktif = false; // TaskCore1 normale dönebilir
+}
+
+volatile bool muzikBaslatIstegi = false;
+volatile bool muzikDurdurIstegi = false;
+
+void BitirmeIslemleri() {
+  // Kum saatini durdur ve ekranı temizle
+  calis = false;
+  lc.clearDisplay(MATRIX_A);
+  lc.clearDisplay(MATRIX_B);
+
+  // Müziği Core 0 üzerinden güvenle durdur ve bitmesini bekle
+  muzikDurdurIstegi = true;
+  while (muzikDurdurIstegi) {
+    delay(10);
+  }
+  VeriGonderimi();
+  // Serial.println("5 saniye bekleme...");
+  delay(5000);
+  DonanimIslemleri();
+}
+
+bool fircalamaAktif = false;
+bool fircalamaYapildi = false; // Yeni flag: Fırçalama yapıldı mı?
+
+// ---------- Görev Fonksiyonları ----------
+// VS1053 kütüphanesinden gelen iç bilgi/hata mesajlarını seri porta yazdırır
+void vs1053_info(const char *info) {
+  Serial.print("[VS1053-INFO] ");
+  Serial.println(info);
+}
+
+// Şarkı kendiliğinden tamamen bittiğinde VS1053 kütüphanesi bu fonksiyonu çağırır
+void vs1053_eof_mp3(const char *info) {
+  // Manuel durdurma yapılıyorsa veya şarkı henüz yeni başladıysa (10 sn'den az) döngüyü engelle!
+  if (!sarkiDurduruluyor && fircalamaAktif && (millis() - sonSarkiBaslamaZamani > 10000)) {
+    Serial.println("[MP3] Şarkı normal süresinde bitti. Sıradaki şarkı talep edildi.");
+    sonrakiSarkiyaGec = true;
+  }
+}
+
+void TaskCore0Kodu(void *pvParameters) {
+  int animIndex = 0;
+  unsigned long lastAnimUpdate = 0;
+
+  while (true) {
+    // Tüm SD Kart ve MP3 işlemleri Core 0 üzerinde çakışmasız yürütülür
+    if (muzikDurdurIstegi) {
+      MuzikDurdurFnc();
+      muzikDurdurIstegi = false;
+    }
+
+    if (muzikBaslatIstegi) {
+      muzikBaslatIstegi = false;
+      if (klasor != "") {
+        playRandomSongFromFolder(klasor.c_str());
+      }
+    }
+
+    if (sonrakiSarkiyaGec) {
+      sonrakiSarkiyaGec = false;
+      if (fircalamaAktif && klasor != "") {
+        playRandomSongFromFolder(klasor.c_str());
+      }
+    }
+
+    if (mp3.isRunning()) {
+      mp3.loop();
+    }
+
+    // Loading Animasyonu (Veri Gönderimi Sırasında)
+    if (loadingAnimasyonAktif) {
+      if (millis() - lastAnimUpdate > 100) { // 100ms hızında
+        lastAnimUpdate = millis();
+        strip.clear();
+        strip.setPixelColor(animIndex, 0, 255, 0); // Yeşil
+        strip.show();
+        animIndex = (animIndex + 1) % LED_COUNT;
+      }
+    }
+
+    // MP3 çalma işlemi için çok kısa bir gecikme veya hiç gecikme olmamalıdır.
+    // Ancak Watchdog Timer'ı tetiklememek için çok kısa bir delay ekliyoruz.
+    vTaskDelay(1 / portTICK_PERIOD_MS);
+  }
+}
+
+// ---------- Görev Fonksiyonları ----------
+// Belirtilen pinden n defa okuma alıp ortalamasını döndürür (Gürültü ve geçiş filtresi)
+int stabilAnalogOku(int pin, int ornekSayisi = 5, int beklemeMs = 20) {
+  long toplam = 0;
+  for (int i = 0; i < ornekSayisi; i++) {
+    toplam += analogRead(pin);
+    if (beklemeMs > 0) delay(beklemeMs);
+  }
+  return (int)(toplam / ornekSayisi);
+}
+
+void TaskCore1Kodu(void *pvParameters) {
+  unsigned long lastPrintTime = 0;
+
+  while (true) {
+    // Kapak MOSFET sürücüsünün sürekli aktif (HIGH) kalmasını sağla
+    digitalWrite(KAPAK_MOSFET_PIN, HIGH);
+
+    // --- SENSÖR OKUMA VE BUTONLAR (TaskCore0'dan taşındı) ---
+    b1 = digitalRead(BTNPLAY_PIN);
+    b2 = digitalRead(BTNSTOP_PIN);
+    b3 = digitalRead(BTNREFRESH_PIN);
+    kapak = digitalRead(KAPAK_PIN);
+    bool kapakAcik = (kapak == KAPAK_ACIK_SEVIYE);
+
+    // WiFi meşgul değilse sensörleri oku
+    static int lastKapak = -1;
+    static unsigned long kapakAcilmaZamani = 0;
+    static bool sensorDataReady = false;
+
+    if (kapak != lastKapak) {
+      Serial.print("[KAPAK] Durum Degisti: ");
+      Serial.println(kapakAcik ? "ACIK (Sensor: 1)" : "KAPALI (Sensor: 0)");
+      lastKapak = kapak;
+
+      // Kapak ilk açıldığında beyaz LED'leri yak ve fırça değerlerini 5 defa kontrol et
+      if (kapakAcik) {
+        // 1. Önce beyaz LED'leri hemen yak
+        for (int i = 0; i < LED_COUNT; i++) {
+          strip.setPixelColor(i, 255, 255, 255);
+        }
+        strip.show();
+
+        Serial.println("[KAPAK] Beyaz LED'ler açıldı. Işığın oturması bekleniyor (150ms)...");
+        delay(150);
+
+        // 2. Fırçaların değerlerini 5 defa kontrol et / örnekle
+        Serial.println("[KAPAK] Fırça sensörleri 5 defa kontrol ediliyor...");
+        firca1Ldr = stabilAnalogOku(FIRCA1_PIN, 5, 20);
+        firca2Ldr = stabilAnalogOku(FIRCA2_PIN, 5, 20);
+        firca3Ldr = stabilAnalogOku(FIRCA3_PIN, 5, 20);
+        firca4Ldr = stabilAnalogOku(FIRCA4_PIN, 5, 20);
+        firca5Ldr = stabilAnalogOku(FIRCA5_PIN, 5, 20);
+        ortamLdr  = stabilAnalogOku(ORTAMLDR_PIN, 5, 20);
+        LdrEsikDeger = ortamLdr + 500;
+        sensorDataReady = true;
+
+        Serial.print("[KAPAK] 5 Kontrol Tamamlandı -> Ortam: ");
+        Serial.print(ortamLdr);
+        Serial.print(" | Fircalar (1-5): ");
+        Serial.print(firca1Ldr); Serial.print(" ");
+        Serial.print(firca2Ldr); Serial.print(" ");
+        Serial.print(firca3Ldr); Serial.print(" ");
+        Serial.print(firca4Ldr); Serial.print(" ");
+        Serial.println(firca5Ldr);
+      }
+    }
+
+    // Sensörleri WiFi meşgul değilken sürekli oku
+    if (!wifiMesgul && !donanimIslemleriAktif) {
+      firca1Ldr = analogRead(FIRCA1_PIN);
+      firca2Ldr = analogRead(FIRCA2_PIN);
+      firca3Ldr = analogRead(FIRCA3_PIN);
+      firca4Ldr = analogRead(FIRCA4_PIN);
+      firca5Ldr = analogRead(FIRCA5_PIN);
+      ortamLdr = analogRead(ORTAMLDR_PIN);
+      LdrEsikDeger = ortamLdr + 500;
+      sensorDataReady = true;
+    }
+
+    // Kapak Açıkken Fırça Kontrolü
+    if (kapakAcik && sensorDataReady) {
+      int thrFirca = ortamLdr + 1500;
+      int thrFirca5 = ortamLdr + 1000;
+
+      bool herhangiBirFircaDisarida = false;
+
+      if (firca1Ldr <= thrFirca) {
+        // Serial.println("Fırça 1 Dışarıda");
+        fircaId = "Firca1";
+        klasor = "/1";
+        herhangiBirFircaDisarida = true;
+      } else if (firca2Ldr <= thrFirca) {
+        // Serial.println("Fırça 2 Dışarıda");
+        fircaId = "Firca2";
+        klasor = "/2";
+        herhangiBirFircaDisarida = true;
+      } else if (firca3Ldr <= thrFirca) {
+        // Serial.println("Fırça 3 Dışarıda");
+        fircaId = "Firca3";
+        klasor = "/3";
+        herhangiBirFircaDisarida = true;
+      } else if (firca4Ldr <= thrFirca) {
+        // Serial.println("Fırça 4 Dışarıda");
+        fircaId = "Firca4";
+        klasor = "/4";
+        herhangiBirFircaDisarida = true;
+      } else if (firca5Ldr <= thrFirca5) {
+        // Serial.println("Fırça 5 Dışarıda");
+        fircaId = "Firca5";
+        klasor = "/5";
+        herhangiBirFircaDisarida = true;
+      }
+
+      if (herhangiBirFircaDisarida) {
+        if (!fircalamaAktif) {
+          Serial.print("[FIRCA] Fırça çıkarıldı (");
+          Serial.print(fircaId);
+          Serial.println("), müzik başlatılıyor...");
+          fircalamaAktif = true;
+          muzikBaslatIstegi = true; // Core 0'a güvenli müzik başlatma komutu
+        }
+      } else {
+        // TÜM FIRÇALAR YERİNDE İSE ŞARKI ÇALMAYI DURDUR KONTROLÜ
+        if (mp3.isRunning() || isPlaying || fircalamaAktif) {
+          Serial.println("[FIRCA] Tüm fırçalar yerinde -> Şarkı çalma durduruluyor...");
+          muzikDurdurIstegi = true; // Core 0'a güvenli müzik durdurma komutu
+          while (muzikDurdurIstegi) {
+            delay(10);
+          }
+
+          // Kum saatini durdur ve dot matrix ekranları söndür
+          if (calis) {
+            calis = false;
+            lc.clearDisplay(MATRIX_A);
+            lc.clearDisplay(MATRIX_B);
+          }
+
+          if (fircalamaAktif) {
+            VeriGonderimi();
+            fircalamaAktif = false;
+            fircalamaYapildi = true; // Kapak kapanınca fan çalışsın diye işaretle
+          }
+
+          fircaId = "";
+          klasor = "";
+        }
+      }
+    }
+    // Kapak kapandıysa ve fırçalama aktifse bitir
+    else if (!kapakAcik) {
+      // Kapak kapalıyken kum saati çalışıyorsa durdur
+      if (calis) {
+        calis = false;
+        lc.clearDisplay(MATRIX_A);
+        lc.clearDisplay(MATRIX_B);
+      }
+
+      if (fircalamaYapildi) {
+        // Serial.println("Kapak Kapandi ve Fircalama Yapilmisti -> Donanim
+        // Islemleri");
+        DonanimIslemleri();
+        fircalamaYapildi = false;
+      }
+
+      if (fircalamaAktif) {
+        // Serial.println("Kapak Kapali (Fircalama Aktifti) -> Bitirme
+        // Islemleri");
+        BitirmeIslemleri(); // Hem veri gönder hem donanım çalıştır
+        fircalamaAktif = false;
+        fircalamaYapildi = false;
+      }
+    }
+
+    // --- BUTON İŞLEMLERİ (Birleştirilmiş) ---
+
+    // 5 Saniye Basılı Tutma ile AP Moduna Geçiş (PLAY + STOP aynı anda)
+    static unsigned long apBasiliTutmaZamani = 0;
+    static int sonSaniyeSayaci = -1;
+
+    if (b1 == HIGH && b2 == HIGH) {
+      if (apBasiliTutmaZamani == 0) {
+        apBasiliTutmaZamani = millis();
+        sonSaniyeSayaci = 0;
+        Serial.println("\n[AP-KURULUM] Play ve Stop butonlarina basildi! AP moduna gecmek icin 5 sn basili tutun...");
+      }
+
+      unsigned long basiliSure = millis() - apBasiliTutmaZamani;
+      int gecenSaniye = basiliSure / 1000;
+
+      // Her geçen saniye için seri porta ve LED'lere geri bildirim
+      if (gecenSaniye != sonSaniyeSayaci && gecenSaniye <= 5) {
+        sonSaniyeSayaci = gecenSaniye;
+        Serial.print("[AP-KURULUM] Basili tutuluyor: ");
+        Serial.print(gecenSaniye);
+        Serial.println("/5 saniye...");
+
+        // NeoPixel LED'leri adım adım yakarak görsel sayaç göster
+        int yakilacakLed = map(basiliSure, 0, 5000, 0, LED_COUNT);
+        strip.clear();
+        for (int i = 0; i < yakilacakLed && i < LED_COUNT; i++) {
+          strip.setPixelColor(i, 255, 160, 0); // Sarı/Turuncu ilerleme çubuğu
+        }
+        strip.show();
+      }
+
+      if (basiliSure >= 5000) {
+        Serial.println("\n==================================================");
+        Serial.println("[AP-KURULUM] 5 SANİYE DOLDU! AP MODUNA GEÇİLİYOR...");
+        Serial.println("==================================================");
+
+        // LED'leri tamamen sarı yap
+        for (int i = 0; i < LED_COUNT; i++) {
+          strip.setPixelColor(i, 255, 160, 0);
+        }
+        strip.show();
+
+        // Kum saatini ve müziği durdur
+        calis = false;
+        lc.clearDisplay(MATRIX_A);
+        lc.clearDisplay(MATRIX_B);
+        muzikDurdurIstegi = true;
+        while (muzikDurdurIstegi) {
+          delay(10);
+        }
+
+        wifiMesgul = true;
+        donanimIslemleriAktif = true;
+
+        // AP Modunu başlat ve bekleme döngüsüne gir (Kayıt olunca yeniden başlar)
+        apModunuBaslat();
+        apModuDongusu();
+      }
+    } else {
+      // Butonlar bırakıldıysa sayacı sıfırla
+      apBasiliTutmaZamani = 0;
+      sonSaniyeSayaci = -1;
+
+      // OYNAT BUTONU (Yalnızca tek basıldığında) - Sadece kum saatini başlatır
+      if (b1 == HIGH) {
+        if (millis() - lastDebounce > DEBOUNCE_THRESHOLD) {
+          // Kum saati başlatma
+          setHourglassDuration(120); // Normal fırçalama 2 dakika
+          for (byte i = 0; i < 2; i++) {
+            lc.shutdown(i, false);
+            lc.setIntensity(i, 2);
+          }
+          resetTime();
+          calis = !calis; // Durumu tersine çevir
+          lastDebounce = millis();
+        }
+      }
+
+      // DURDUR BUTONU (Yalnızca tek basıldığında)
+      if (b2 == HIGH) {
+        calis = !calis; // Durumu tersine çevir
+        lc.clearDisplay(MATRIX_A);
+        lc.clearDisplay(MATRIX_B);
+        delay(500);
+        calis = false;
+      }
+    }
+
+    // YENILE BUTONU
+    if (digitalRead(BTNREFRESH_PIN) == HIGH) {
+      // Debounce eklenebilir
+      if (kapakAcik) { // Kapak AÇIK ise
+        // Serial.println("Refresh -> Reset (Bitirme Yok)");
+        //  Resetle!
+        for (byte i = 0; i < 2; i++) {
+          lc.shutdown(i, false);
+          lc.setIntensity(i, 2);
+        }
+        calis = false;
+        resetTime();
+      } else { // Kapak KAPALI ise
+        // Serial.println("Kapak Kapali + Refresh -> 20sn Kum Saati");
+        setHourglassDuration(20); // 20 saniye
+        for (byte i = 0; i < 2; i++) {
+          lc.shutdown(i, false);
+          lc.setIntensity(i, 2);
+        }
+        resetTime();
+        calis = true; // Kum saatini başlat
+      }
+    }
+
+    // --- LED VE KUM SAATİ ANİMASYONLARI ---
+
+    // Normal Kapak Durumu (Donanım işlemleri aktif değilse ve loading
+    // animasyonu aktif değilse)
+    if (!donanimIslemleriAktif && !loadingAnimasyonAktif) {
+      if (kapakAcik) { // Kapak Açık -> Beyaz LED'ler yanar
+        for (int i = 0; i < LED_COUNT; i++) {
+          strip.setPixelColor(i, 255, 255, 255);
+        }
+      } else { // Kapak Kapalı -> LED'ler söner
+        for (int i = 0; i < LED_COUNT; i++) {
+          strip.setPixelColor(i, 0, 0, 0);
+        }
+      }
+      strip.show();
+    }
+
+    // Periyodik Sensör Bilgisi Yazdırma (1 saniyede bir)
+    if (!wifiMesgul && (millis() - lastPrintTime > 1000)) {
+      bilgileriYazdir();
+      lastPrintTime = millis();
+    }
+    /* Kapak durum sonu*/
+
+    /*Kum saati baslangıcı*/
+    if (calis) {
+      delay(DELAY_FRAME); // Bu delay animasyon hızı için gerekli
+      gravity = getGravity();
+      lc.setRotation((ROTATION_OFFSET + gravity) % 360);
+      // //Serial.println(gravity);
+      bool moved = updateMatrix();
+      bool dropped = dropParticle();
+    }
+    /*Kum saati bitis*/
+
+    vTaskDelay(50 / portTICK_PERIOD_MS);
+  }
+}
+
+// ---------- Loop ----------
+void loop() {
+
+  // Genellikle boş bırakılır, çünkü FreeRTOS görevleri kullanılıyor
+}
+
+void bilgileriYazdir() {
+  int rawKapak = digitalRead(KAPAK_PIN);
+  bool acik = (rawKapak == KAPAK_ACIK_SEVIYE);
+  Serial.print("[SENSOR] KapakRaw(Pin21): ");
+  Serial.print(rawKapak);
+  Serial.print(acik ? " [ACIK]" : " [KAPALI]");
+  Serial.print(" | Butonlar (b1,b2,b3): ");
+  Serial.print(b1);
+  Serial.print(",");
+  Serial.print(b2);
+  Serial.print(",");
+  Serial.print(b3);
+  Serial.print(" | OrtamLDR: ");
+  Serial.print(ortamLdr);
+  Serial.print(" | Fircalar (1-5): ");
+  Serial.print(firca1Ldr);
+  Serial.print(" ");
+  Serial.print(firca2Ldr);
+  Serial.print(" ");
+  Serial.print(firca3Ldr);
+  Serial.print(" ");
+  Serial.print(firca4Ldr);
+  Serial.print(" ");
+  Serial.println(firca5Ldr);
+}
