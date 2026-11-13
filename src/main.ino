@@ -492,19 +492,19 @@ void TaskCore1Kodu(void *pvParameters) {
         }
       }
     }
-    // Kapak kapandıysa ve fırçalama aktifse bitir
+    // Kapak kapandıysa durum kontrolü
     else if (!kapakAcik) {
       if (fircalamaYapildi) {
-        // Serial.println("Kapak Kapandi ve Fircalama Yapilmisti -> Donanim Islemleri");
+        Serial.println("[KAPAK] Kapak kapandı ve fırçalama tamamlanmıştı -> Donanım kurutma işlemleri (Fan & Mavi Işık) başlatılıyor.");
         DonanimIslemleri();
         fircalamaYapildi = false;
-      }
-
-      if (fircalamaAktif) {
-        // Serial.println("Kapak Kapali (Fircalama Aktifti) -> Bitirme Islemleri");
-        BitirmeIslemleri(); // Hem veri gönder hem donanım çalıştır (kum saatini de kapatır)
-        fircalamaAktif = false;
-        fircalamaYapildi = false;
+      } else if (fircalamaAktif) {
+        // Çıkarılan fırça yerine gelmediyse kapak kapansa bile veri gönderimi ve donanım işlemlerine GEÇME!
+        static unsigned long lastUyariZamani = 0;
+        if (millis() - lastUyariZamani > 3000) {
+          lastUyariZamani = millis();
+          Serial.println("[KAPAK] Fırça henüz yerine konmadı! Kapak kapansa bile veri gönderimi veya kurutmaya geçilmiyor.");
+        }
       }
     }
 
