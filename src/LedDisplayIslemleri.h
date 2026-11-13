@@ -323,22 +323,10 @@ const byte UPLOAD_FRAME[6][8] = {
 
 const byte FRAME_EMPTY[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
-// Supabase'e veri gönderilirken alt matristen üst matrise kesintisiz yükselen ok animasyonu
+// Supabase'e veri gönderilirken sadece B displayinde (alt matris) yükselen ok animasyonu
 void dotMatrisVeriGonderimAnimasyonu(int step) {
-  int phase = step % 8;
-
-  if (phase < 6) {
-    matrisCiz(MATRIX_B, UPLOAD_FRAME[phase]);
-  } else {
-    matrisCiz(MATRIX_B, FRAME_EMPTY);
-  }
-
-  int aPhase = (phase >= 3) ? (phase - 3) : -1;
-  if (aPhase >= 0 && aPhase < 6) {
-    matrisCiz(MATRIX_A, UPLOAD_FRAME[aPhase]);
-  } else {
-    matrisCiz(MATRIX_A, FRAME_EMPTY);
-  }
+  int phase = step % 6;
+  matrisCiz(MATRIX_B, UPLOAD_FRAME[phase]);
 }
 
 // Veri gönderim sonucu: Başarılıysa animasyonlu Tik ✔, Başarısızsa Çarpı ✖

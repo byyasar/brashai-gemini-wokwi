@@ -125,6 +125,8 @@ volatile bool loadingAnimasyonAktif =
 void VeriGonderimi() {
   wifiMesgul = true;            // Sensör okumayı durdur
   donanimIslemleriAktif = true; // TaskCore1'in LED'lere müdahalesini engelle
+  lc.clearDisplay(MATRIX_A);    // Üst ekran boş kalsın
+  lc.clearDisplay(MATRIX_B);
   loadingAnimasyonAktif = true; // Loading animasyonunu başlat
 
   // Serial.println("Veri gonderimi basliyor (Loading animasyonu aktif)...");
