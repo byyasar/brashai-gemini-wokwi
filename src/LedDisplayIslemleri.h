@@ -311,22 +311,30 @@ void dotMatrisWifiBasarisiz() {
 }
 
 // ---------------- Supabase Veri Gönderim Animasyonları ----------------
-// Alt matristen üst matrise doğru (buluta) yükselen veri oku (Upload) kareleri
-const byte UPLOAD_FRAME[6][8] = {
-  { 0, 0, 0, 0, 0, 0, 0b00000001, 0b00000011 },
-  { 0, 0, 0, 0, 0b00000011, 0b00000111, 0b00001100, 0b00011000 },
-  { 0, 0, 0b00000111, 0b00001111, 0b00011000, 0b00110000, 0b00110000, 0 },
-  { 0b00001111, 0b00011111, 0b00110000, 0b01100000, 0b01100000, 0, 0, 0 },
-  { 0b01111100, 0b11110000, 0b11000000, 0b11000000, 0, 0, 0, 0 },
-  { 0b11100000, 0b11000000, 0, 0, 0, 0, 0, 0 }
+// Bir noktanın daire etrafında dönmesi (Dönen Nokta / Spinner - 8 adım)
+const byte SPINNER_FRAME[8][8] = {
+  // 0: Üst merkez
+  { 0, 0b00011000, 0, 0, 0, 0, 0, 0 },
+  // 1: Üst-sağ
+  { 0, 0, 0b00000100, 0, 0, 0, 0, 0 },
+  // 2: Sağ merkez
+  { 0, 0, 0, 0b00000010, 0b00000010, 0, 0, 0 },
+  // 3: Alt-sağ
+  { 0, 0, 0, 0, 0, 0b00000100, 0, 0 },
+  // 4: Alt merkez
+  { 0, 0, 0, 0, 0, 0, 0b00011000, 0 },
+  // 5: Alt-sol
+  { 0, 0, 0, 0, 0, 0b00100000, 0, 0 },
+  // 6: Sol merkez
+  { 0, 0, 0, 0b01000000, 0b01000000, 0, 0, 0 },
+  // 7: Üst-sol
+  { 0, 0, 0b00100000, 0, 0, 0, 0, 0 }
 };
 
-const byte FRAME_EMPTY[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-
-// Supabase'e veri gönderilirken sadece B displayinde (alt matris) yükselen ok animasyonu
+// Supabase'e veri gönderilirken sadece B displayinde (alt matris) daire etrafında dönen nokta
 void dotMatrisVeriGonderimAnimasyonu(int step) {
-  int phase = step % 6;
-  matrisCiz(MATRIX_B, UPLOAD_FRAME[phase]);
+  int phase = step % 8;
+  matrisCiz(MATRIX_B, SPINNER_FRAME[phase]);
 }
 
 // Veri gönderim sonucu: Başarılıysa animasyonlu Tik ✔, Başarısızsa Çarpı ✖
