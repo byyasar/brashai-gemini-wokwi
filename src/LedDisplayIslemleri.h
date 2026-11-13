@@ -213,10 +213,10 @@ void matrisCiz(int addr, const byte bitmap[8]) {
 
 // Wi-Fi Animasyon Kareleri (45° Diyagonal / Elmas Açı)
 const byte WIFI_FRAME_1[8] = {
-  0b00000000,
-  0b01100000,
-  0b01100000,
-  0b00000000,
+  0b11000000,
+  0b11000000,
+  0b00010000,
+  0b00110000,
   0b00000000,
   0b00000000,
   0b00000000,
@@ -224,37 +224,37 @@ const byte WIFI_FRAME_1[8] = {
 };
 
 const byte WIFI_FRAME_2[8] = {
-  0b00001000,
-  0b01101000,
-  0b01110000,
-  0b00100000,
   0b11000000,
-  0b00000000,
+  0b11010100,
+  0b00010100,
+  0b01110100,
+  0b00000100,
+  0b01111100,
   0b00000000,
   0b00000000
 };
 
 const byte WIFI_FRAME_3[8] = {
-  0b00001001,
-  0b01101001,
-  0b01110010,
-  0b00100100,
-  0b11001000,
-  0b00010000,
-  0b00100000,
-  0b11000000
+  0b11000000,
+  0b11010101,
+  0b00010101,
+  0b01110101,
+  0b00000101,
+  0b01111101,
+  0b00000001,
+  0b01111111
 };
 
 // Onay Simgesi (Elmas kasada tam yukarı bakan, 180° çevrilmiş Tik ✔)
 const byte ICON_CHECKMARK[8] = {
   0b00000000,
-  0b00000000,
-  0b00011100,
-  0b00011110,
-  0b00011000,
-  0b00011000,
-  0b00011000,
-  0b00011000
+  0b01110000,
+  0b01111000,
+  0b01101100,
+  0b01100110,
+  0b01100010,
+  0b01100000,
+  0b00000000
 };
 
 // Hata Simgesi (Elmas Kasada Çarpı ✖ Görünen Şekil)
@@ -283,17 +283,18 @@ void dotMatrisWifiBasarili() {
   matrisCiz(MATRIX_A, WIFI_FRAME_3);   // Üst matris: Wi-Fi dalgası
 
   // 180° çevrilmiş Tik animasyonu: B displayinde alttan yukarıya doğru adım adım çizilir
-  const byte animSteps[4][8] = {
-    { 0, 0, 0, 0, 0, 0, 0b00011000, 0b00011000 },
-    { 0, 0, 0, 0, 0b00011000, 0b00011000, 0b00011000, 0b00011000 },
-    { 0, 0, 0, 0b00011110, 0b00011000, 0b00011000, 0b00011000, 0b00011000 },
-    { 0, 0, 0b00011100, 0b00011110, 0b00011000, 0b00011000, 0b00011000, 0b00011000 }
-  };
+    const byte animSteps[5][8] = {
+  { 0b00000000, 0b00000110, 0b00001100, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000 },
+  { 0b00000000, 0b00011110, 0b00111100, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000 },
+  { 0b00000000, 0b01111110, 0b01111100, 0b01100000, 0b01000000, 0b00000000, 0b00000000, 0b00000000 },
+  { 0b00000000, 0b01111110, 0b01111100, 0b01100000, 0b01100000, 0b01100000, 0b00100000, 0b00000000 },
+  { 0b00000000, 0b01111100, 0b01111100, 0b01100000, 0b01100000, 0b01100000, 0b01100000, 0b00100000 }
+};
 
-  for (int step = 0; step < 4; step++) {
-    matrisCiz(MATRIX_B, animSteps[step]);
-    delay(100);
-  }
+for (int step = 0; step < 5; step++) {
+  matrisCiz(MATRIX_B, animSteps[step]);
+  delay(100);
+}
   delay(1400);                          // Ekranda sabit tut
   lc.clearDisplay(MATRIX_A);
   lc.clearDisplay(MATRIX_B);
@@ -310,6 +311,25 @@ void dotMatrisWifiBasarisiz() {
 }
 
 // ---------------- Supabase Veri Gönderim Animasyonları ----------------
+// Supabase'e veri gönderilirken A displayinde gösterilecek bekleme sembolü
+const byte wait[8] = {
+  0b00110000,
+  0b01101000,
+  0b11100100,
+  0b10010010,
+  0b01001111,
+  0b00101111,
+  0b00011110,
+  0b00001100
+};
+
+// A displayinde bekleme sembolünü gösterir
+void dotMatrisWaitGoster() {
+  lc.shutdown(MATRIX_A, false);
+  lc.setIntensity(MATRIX_A, 2);
+  matrisCiz(MATRIX_A, wait);
+}
+
 // Bir noktanın daire etrafında dönmesi (Dönen Nokta / Spinner - 8 adım)
 const byte SPINNER_FRAME[8][8] = {
   // 0: Üst merkez
@@ -330,9 +350,10 @@ const byte SPINNER_FRAME[8][8] = {
   { 0, 0, 0b00100000, 0, 0, 0, 0, 0 }
 };
 
-// Supabase'e veri gönderilirken sadece B displayinde (alt matris) daire etrafında dönen nokta
+// Supabase'e veri gönderilirken A displayinde wait sembolü, B displayinde (alt matris) daire etrafında dönen nokta
 void dotMatrisVeriGonderimAnimasyonu(int step) {
   int phase = step % 8;
+  matrisCiz(MATRIX_A, wait);
   matrisCiz(MATRIX_B, SPINNER_FRAME[phase]);
 }
 
@@ -342,16 +363,18 @@ void dotMatrisVeriGonderimSonuc(bool basarili) {
   lc.clearDisplay(MATRIX_B);
 
   if (basarili) {
-    const byte animSteps[4][8] = {
-      { 0, 0, 0, 0, 0, 0, 0b00011000, 0b00011000 },
-      { 0, 0, 0, 0, 0b00011000, 0b00011000, 0b00011000, 0b00011000 },
-      { 0, 0, 0, 0b00011110, 0b00011000, 0b00011000, 0b00011000, 0b00011000 },
-      { 0, 0, 0b00011100, 0b00011110, 0b00011000, 0b00011000, 0b00011000, 0b00011000 }
-    };
-    for (int step = 0; step < 4; step++) {
-      matrisCiz(MATRIX_B, animSteps[step]);
-      delay(80);
-    }
+    const byte animSteps[5][8] = {
+  { 0b00000000, 0b00000110, 0b00001100, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000 },
+  { 0b00000000, 0b00011110, 0b00111100, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000 },
+  { 0b00000000, 0b01111110, 0b01111100, 0b01100000, 0b01000000, 0b00000000, 0b00000000, 0b00000000 },
+  { 0b00000000, 0b01111110, 0b01111100, 0b01100000, 0b01100000, 0b01100000, 0b00100000, 0b00000000 },
+  { 0b00000000, 0b01111100, 0b01111100, 0b01100000, 0b01100000, 0b01100000, 0b01100000, 0b00100000 }
+};
+
+for (int step = 0; step < 5; step++) {
+  matrisCiz(MATRIX_B, animSteps[step]);
+  delay(100);
+}
     delay(1200);
   } else {
     matrisCiz(MATRIX_B, ICON_CROSS);
@@ -493,58 +516,20 @@ void dotMatrisPervaneAdimi(int step) {
 
 // ---------------- Müzik Notası Sallanma (Dans) Animasyon Kareleri (90° Sağa Döndürülmüş) ----------------
 // Notanın hem alt tarafı (kafalar) hem üst kolları komple sağa-sola sallanır
-const byte MUSIC_NOTE_FRAMES[4][8] = {
-  // 0: Merkez
-  {
-    0b01000000,
-    0b11100000,
-    0b11111111,
-    0b00000011,
-    0b01000011,
-    0b11100011,
-    0b11111111,
-    0b00000000
-  },
-  // 1: Sağa Sallanma (Tüm gövde ve alt taraf sağa kayar)
-  {
-    0b00000000,
-    0b01000000,
-    0b11100000,
-    0b11111111,
-    0b00000011,
-    0b01000011,
-    0b11100011,
-    0b11111111
-  },
-  // 2: Merkez
-  {
-    0b01000000,
-    0b11100000,
-    0b11111111,
-    0b00000011,
-    0b01000011,
-    0b11100011,
-    0b11111111,
-    0b00000000
-  },
-  // 3: Sola Sallanma (Tüm gövde ve alt taraf sola kayar)
-  {
-    0b11100000,
-    0b11111111,
-    0b00000011,
-    0b01000011,
-    0b11100011,
-    0b11111111,
-    0b00000000,
-    0b00000000
-  }
+const byte MUSIC_NOTE_FRAMES[6][8] = {
+  { 0b01000000, 0b11100000, 0b01111110, 0b00000110, 0b01000110, 0b11100110, 0b01111110, 0b00000000 },
+  { 0b00000000, 0b01000000, 0b11100000, 0b01111110, 0b00000110, 0b01000110, 0b11100110, 0b01111110 },
+  { 0b00000000, 0b00000000, 0b01000000, 0b11100000, 0b01111110, 0b00000110, 0b01000110, 0b11100110 },
+  { 0b00000000, 0b01000000, 0b11100000, 0b01111110, 0b00000110, 0b01000110, 0b11100110, 0b01111110 },
+  { 0b01000000, 0b11100000, 0b01111110, 0b00000110, 0b01000110, 0b11100110, 0b01111110, 0b00000000 },
+  { 0b11100000, 0b01111110, 0b00000110, 0b01000110, 0b11100110, 0b01111110, 0b00000000, 0b00000000 }
 };
 
 // B displayinde sağa sola sallanan müzik notası animasyonu adımı
 void dotMatrisNotaSalla(int step) {
   lc.shutdown(MATRIX_B, false);
   lc.setIntensity(MATRIX_B, 2);
-  matrisCiz(MATRIX_B, MUSIC_NOTE_FRAMES[step % 4]);
+  matrisCiz(MATRIX_B, MUSIC_NOTE_FRAMES[step % 6]);
 }
 
 // B displayinde sabit müzik notası sembolünü (♫) gösterir

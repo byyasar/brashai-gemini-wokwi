@@ -137,6 +137,7 @@ void VeriGonderimi() {
     Serial.println("[Veri] İnternet aktif. Supabase gönderim animasyonu başlatılıyor...");
     lc.clearDisplay(MATRIX_A);
     lc.clearDisplay(MATRIX_B);
+    dotMatrisWaitGoster();        // A displayinde wait sembolü göster
     loadingAnimasyonAktif = true; // Sadece internet aktif olduğunda başlat!
 
     basarili = DatayiGonder(cihazId, fircaId);
