@@ -619,7 +619,14 @@ void TaskCore1Kodu(void *pvParameters) {
     if (b3 == HIGH) {
       if (millis() - lastRefreshDebounce > DEBOUNCE_THRESHOLD) {
         lastRefreshDebounce = millis();
-        if (!kapakAcik) {
+        int aktifFirca = (secilenFircaNo > 0) ? secilenFircaNo : sonGosterilenFircaNo;
+        bool fircaDisarida = (fircalamaAktif && (herhangiBirFircaDisarida || aktifFirca > 0));
+
+        if (fircaDisarida) {
+          // Fırça yerinde değilken: Şarkıyı değiştir!
+          Serial.println("[BUTON] Fırça dışarıda + Refresh -> Sıradaki şarkıya geçiliyor...");
+          sonrakiSarkiyaGec = true;
+        } else if (!kapakAcik) {
           // Kapak KAPALI ise: 20 sn Kum Saati
           Serial.println("[BUTON] Kapak Kapali + Refresh -> 20 sn Kum Saati baslatiliyor");
           setHourglassDuration(20); // 20 saniye kum saati
@@ -630,7 +637,7 @@ void TaskCore1Kodu(void *pvParameters) {
           resetTime();
           calis = true; // Kum saatini başlat
         } else {
-          // Kapak AÇIK ise: Resetle
+          // Kapak AÇIK ve fırçalar yerinde ise: Resetle
           Serial.println("[BUTON] Kapak Acik + Refresh -> Kum Saati Sifirlandi");
           for (byte i = 0; i < 2; i++) {
             lc.shutdown(i, false);
