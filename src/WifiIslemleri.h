@@ -12,6 +12,7 @@ String wifi_ssid = "";
 String wifi_password = "";
 String supabase_url = "";
 String supabase_key = "";
+String cihazId = "Cihaz1";
 
 bool wifiStatus = false;
 
@@ -130,6 +131,14 @@ String htmlSayfasiOlustur() {
         <div class="hint">Supabase Anon / Public API Anahtarınız</div>
       </div>
 
+      <div class="form-group">
+        <label>Cihaz ID (Cihaz Adı):</label>
+        <input type="text" name="cihaz_id" value=")rawhtml";
+  html += cihazId;
+  html += R"rawhtml(" required placeholder="Örn: Cihaz1">
+        <div class="hint">Supabase tablosuna kaydedilecek cihaz kimliği (Varsayılan: Cihaz1)</div>
+      </div>
+
       <button type="submit">Kaydet ve Yeniden Başlat</button>
     </form>
   </div>
@@ -146,18 +155,24 @@ void handleSave() {
   String new_pass = server.arg("password");
   String new_url = server.arg("supabase_url");
   String new_key = server.arg("supabase_key");
+  String new_cihaz_id = server.arg("cihaz_id");
 
   new_ssid.trim();
   new_pass.trim();
   new_url.trim();
   new_key.trim();
+  new_cihaz_id.trim();
+
+  if (new_cihaz_id.isEmpty()) {
+    new_cihaz_id = "Cihaz1";
+  }
 
   // URL sonunda slash varsa temizle
   if (new_url.endsWith("/")) {
     new_url.remove(new_url.length() - 1);
   }
 
-  ayarlariKaydet(new_ssid, new_pass, new_url, new_key);
+  ayarlariKaydet(new_ssid, new_pass, new_url, new_key, new_cihaz_id);
 
   String basariHtml = R"rawhtml(
 <!DOCTYPE html>

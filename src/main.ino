@@ -45,7 +45,7 @@ Adafruit_NeoPixel strip(LED_COUNT, SERITLED_PIN, NEO_GRB + NEO_KHZ800);
 
 String klasor = "";
 String fircaId = "";
-String cihazId = "Cihaz1";
+// cihazId config.h ve WifiIslemleri.h üzerinden AP modunda girilip NVS hafızasında yönetilir
 
 void setup() {
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); // Düşük voltaj/brownout resetini engelle
