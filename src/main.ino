@@ -412,24 +412,15 @@ void TaskCore1Kodu(void *pvParameters) {
     }
     // Kapak kapandıysa ve fırçalama aktifse bitir
     else if (!kapakAcik) {
-      // Kapak kapalıyken kum saati çalışıyorsa durdur
-      if (calis) {
-        calis = false;
-        lc.clearDisplay(MATRIX_A);
-        lc.clearDisplay(MATRIX_B);
-      }
-
       if (fircalamaYapildi) {
-        // Serial.println("Kapak Kapandi ve Fircalama Yapilmisti -> Donanim
-        // Islemleri");
+        // Serial.println("Kapak Kapandi ve Fircalama Yapilmisti -> Donanim Islemleri");
         DonanimIslemleri();
         fircalamaYapildi = false;
       }
 
       if (fircalamaAktif) {
-        // Serial.println("Kapak Kapali (Fircalama Aktifti) -> Bitirme
-        // Islemleri");
-        BitirmeIslemleri(); // Hem veri gönder hem donanım çalıştır
+        // Serial.println("Kapak Kapali (Fircalama Aktifti) -> Bitirme Islemleri");
+        BitirmeIslemleri(); // Hem veri gönder hem donanım çalıştır (kum saatini de kapatır)
         fircalamaAktif = false;
         fircalamaYapildi = false;
       }
@@ -499,52 +490,58 @@ void TaskCore1Kodu(void *pvParameters) {
       apBasiliTutmaZamani = 0;
       sonSaniyeSayaci = -1;
 
-      // OYNAT BUTONU (Yalnızca tek basıldığında) - Sadece kum saatini başlatır
+      // OYNAT BUTONU (Yalnızca tek basıldığında) - Kum saatini başlatır
       if (b1 == HIGH) {
         if (millis() - lastDebounce > DEBOUNCE_THRESHOLD) {
-          // Kum saati başlatma
-          setHourglassDuration(120); // Normal fırçalama 2 dakika
+          lastDebounce = millis();
+          Serial.println("[BUTON] Play -> 2 dk (120 sn) Kum Saati baslatiliyor");
+          setHourglassDuration(120); // 2 dakika kum saati
           for (byte i = 0; i < 2; i++) {
             lc.shutdown(i, false);
             lc.setIntensity(i, 2);
           }
           resetTime();
-          calis = !calis; // Durumu tersine çevir
-          lastDebounce = millis();
+          calis = true; // Kum saatini başlat
         }
       }
 
       // DURDUR BUTONU (Yalnızca tek basıldığında)
       if (b2 == HIGH) {
-        calis = !calis; // Durumu tersine çevir
-        lc.clearDisplay(MATRIX_A);
-        lc.clearDisplay(MATRIX_B);
-        delay(500);
-        calis = false;
+        if (millis() - lastDebounce > DEBOUNCE_THRESHOLD) {
+          lastDebounce = millis();
+          Serial.println("[BUTON] Stop -> Kum Saati Durduruldu");
+          calis = false;
+          lc.clearDisplay(MATRIX_A);
+          lc.clearDisplay(MATRIX_B);
+        }
       }
     }
 
-    // YENILE BUTONU
-    if (digitalRead(BTNREFRESH_PIN) == HIGH) {
-      // Debounce eklenebilir
-      if (kapakAcik) { // Kapak AÇIK ise
-        // Serial.println("Refresh -> Reset (Bitirme Yok)");
-        //  Resetle!
-        for (byte i = 0; i < 2; i++) {
-          lc.shutdown(i, false);
-          lc.setIntensity(i, 2);
+    // YENILE / REFRESH BUTONU
+    static unsigned long lastRefreshDebounce = 0;
+    if (b3 == HIGH) {
+      if (millis() - lastRefreshDebounce > DEBOUNCE_THRESHOLD) {
+        lastRefreshDebounce = millis();
+        if (!kapakAcik) {
+          // Kapak KAPALI ise: 20 sn Kum Saati
+          Serial.println("[BUTON] Kapak Kapali + Refresh -> 20 sn Kum Saati baslatiliyor");
+          setHourglassDuration(20); // 20 saniye kum saati
+          for (byte i = 0; i < 2; i++) {
+            lc.shutdown(i, false);
+            lc.setIntensity(i, 2);
+          }
+          resetTime();
+          calis = true; // Kum saatini başlat
+        } else {
+          // Kapak AÇIK ise: Resetle
+          Serial.println("[BUTON] Kapak Acik + Refresh -> Kum Saati Sifirlandi");
+          for (byte i = 0; i < 2; i++) {
+            lc.shutdown(i, false);
+            lc.setIntensity(i, 2);
+          }
+          calis = false;
+          resetTime();
         }
-        calis = false;
-        resetTime();
-      } else { // Kapak KAPALI ise
-        // Serial.println("Kapak Kapali + Refresh -> 20sn Kum Saati");
-        setHourglassDuration(20); // 20 saniye
-        for (byte i = 0; i < 2; i++) {
-          lc.shutdown(i, false);
-          lc.setIntensity(i, 2);
-        }
-        resetTime();
-        calis = true; // Kum saatini başlat
       }
     }
 
