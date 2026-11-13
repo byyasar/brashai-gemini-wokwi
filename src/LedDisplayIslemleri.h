@@ -313,14 +313,14 @@ void dotMatrisWifiBasarisiz() {
 
 // ---------------- AP Modu İkonu (Display A) ----------------
 const byte apmode[8] = {
-  0b00000000,
-  0b00001110,
-  0b00000010,
-  0b00011010,
-  0b01011000,
-  0b01000100,
-  0b01110010,
-  0b00000001
+  0b00110000,
+  0b01100000,
+  0b11100111,
+  0b10010001,
+  0b00001101,
+  0b00101101,
+  0b00100000,
+  0b00111100
 };
 
 // A displayinde AP modu ikonunu gösterir
