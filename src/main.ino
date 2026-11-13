@@ -326,6 +326,10 @@ void TaskCore1Kodu(void *pvParameters) {
       Serial.println(kapakAcik ? "ACIK (Sensor: 1)" : "KAPALI (Sensor: 0)");
       lastKapak = kapak;
 
+      if (!kapakAcik) {
+        fircalarYerindeSayaci = 0; // Kapak kapandığında sahte yerinde sayımını anında sıfırla
+      }
+
       // Kapak ilk açıldığında beyaz LED'leri yak ve fırça değerlerini 5 defa kontrol et
       if (kapakAcik) {
         // 1. Önce beyaz LED'leri hemen yak
@@ -373,8 +377,8 @@ void TaskCore1Kodu(void *pvParameters) {
 
     // Kapak Açıkken Fırça Kontrolü
     if (kapakAcik && sensorDataReady) {
-      int thrFirca = ortamLdr + 1500;
-      int thrFirca5 = ortamLdr + 1000;
+      int thrFirca = min(3800, (int)ortamLdr + 1500);
+      int thrFirca5 = min(3500, (int)ortamLdr + 1000);
 
       herhangiBirFircaDisarida = false;
       secilenFircaNo = 0;
@@ -431,22 +435,35 @@ void TaskCore1Kodu(void *pvParameters) {
           dotMatrisRakamGoster(secilenFircaNo);
         }
       } else {
-        // Tüm fırçalar yerinde görünüyor, ancak buton basımı veya gölge dalgalanması olabileceği için
-        // hemen veri gönderme! En az 10 döngü (~1 saniye) boyunca doğrula!
-        fircalarYerindeSayaci++;
+        // Tüm fırçalar yerinde görünüyor, ancak:
+        // 1. Kapak tamamen açık olmalı!
+        // 2. Ortam LDR'si aydınlık olmalı (kapak kapanırken ortam kararır, bu sahte algılamayı önler!)
+        if (kapakAcik && ortamLdr < 2000) {
+          fircalarYerindeSayaci++;
+        } else {
+          fircalarYerindeSayaci = 0;
+        }
 
-        if (fircalarYerindeSayaci >= 10) {
+        if (fircalarYerindeSayaci >= 15) {
           fircalarYerindeSayaci = 0;
 
           // Çıkarılmış olan fırçanın LDR sensörünü 5 kez stabil ölçerek gerçekten yerine oturduğunu teyit et
           bool gercektenYerinde = true;
-          if (sonGosterilenFircaNo > 0) {
+
+          // Ortam ışığı hala aydınlık mı ve kapak hala açık mı? (Kapak kapanıyorsa ortam kararır!)
+          int guncelOrtam = stabilAnalogOku(ORTAMLDR_PIN, 5, 20);
+          if (guncelOrtam > 2000 || !kapakAcik) {
+            gercektenYerinde = false; // Kapak kapanıyor veya ortam karanlık, sahte algılama!
+            Serial.println("[FIRCA] Yanlış alarm: Ortam karanlık veya kapak kapanıyor, fırça yerine kondu sayılamaz!");
+          }
+
+          if (sonGosterilenFircaNo > 0 && gercektenYerinde) {
             int kontrolPin = (sonGosterilenFircaNo == 1) ? FIRCA1_PIN :
                              (sonGosterilenFircaNo == 2) ? FIRCA2_PIN :
                              (sonGosterilenFircaNo == 3) ? FIRCA3_PIN :
                              (sonGosterilenFircaNo == 4) ? FIRCA4_PIN : FIRCA5_PIN;
             int dogrulamaDegeri = stabilAnalogOku(kontrolPin, 5, 20);
-            int esik = (sonGosterilenFircaNo == 5) ? (ortamLdr + 1000) : (ortamLdr + 1500);
+            int esik = min(3800, (sonGosterilenFircaNo == 5) ? (guncelOrtam + 1000) : (guncelOrtam + 1500));
             if (dogrulamaDegeri <= esik) {
               gercektenYerinde = false; // Fırça hala dışarıda, yanlış alarm!
               Serial.println("[FIRCA] Yanlış alarm: Fırça hala dışarıda, veri gönderimi yapılmıyor.");
@@ -486,7 +503,9 @@ void TaskCore1Kodu(void *pvParameters) {
     }
     // Kapak kapandıysa durum kontrolü
     else if (!kapakAcik) {
-      if (fircalamaYapildi) {
+      fircalarYerindeSayaci = 0; // Kapak kapalıyken sayaç sıfır tutulur
+
+      if (fircalamaYapildi && !fircalamaAktif) {
         Serial.println("[KAPAK] Kapak kapandı ve fırçalama tamamlanmıştı -> Donanım kurutma işlemleri (Fan & Mavi Işık) başlatılıyor.");
         DonanimIslemleri();
         fircalamaYapildi = false;
