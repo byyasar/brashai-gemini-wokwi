@@ -604,22 +604,26 @@ void TaskCore1Kodu(void *pvParameters) {
           lastDebounce = millis();
           Serial.println("[BUTON] Stop -> Kum Saati Durduruldu");
           calis = false;
-          lc.clearDisplay(MATRIX_A);
-          lc.clearDisplay(MATRIX_B);
 
-          // Eğer fırça yerine konmamışsa (hala dışarıdaysa) fırça numarasını ve nota animasyonunu tekrar göster
+          // Eğer fırça yerine konmamışsa (Kapak açık VEYA kapalı olsun) fırça numarasını silme, tekrar göster!
           int aktifFirca = (secilenFircaNo > 0) ? secilenFircaNo : sonGosterilenFircaNo;
-          if (kapakAcik && (herhangiBirFircaDisarida || fircalamaAktif) && aktifFirca > 0) {
+          bool fircaDisarida = (fircalamaAktif && aktifFirca > 0);
+
+          if (fircaDisarida) {
             Serial.print("[BUTON] Fırça hala dışarıda (Fırça ");
             Serial.print(aktifFirca);
-            Serial.println(") -> A displayinde rakam, B displayinde nota animasyonu yeniden gösteriliyor.");
+            Serial.println(") -> A displayinde rakam, B displayinde nota animasyonu gösterilmeye devam ediyor.");
 
+            lc.clearDisplay(MATRIX_A);
+            lc.clearDisplay(MATRIX_B);
             dotMatrisRakamGoster(aktifFirca);
             dotMatrisNotaSalla(0);
             sonGosterilenFircaNo = aktifFirca;
             noteAnimStep = 1;
             lastNoteAnimTime = millis();
           } else {
+            lc.clearDisplay(MATRIX_A);
+            lc.clearDisplay(MATRIX_B);
             sonGosterilenFircaNo = 0;
           }
         }
