@@ -311,6 +311,27 @@ void dotMatrisWifiBasarisiz() {
   lc.clearDisplay(MATRIX_B);
 }
 
+// ---------------- AP Modu İkonu (Display A) ----------------
+const byte apmode[8] = {
+  0b00000000,
+  0b00001110,
+  0b00000010,
+  0b00011010,
+  0b01011000,
+  0b01000100,
+  0b01110010,
+  0b00000001
+};
+
+// A displayinde AP modu ikonunu gösterir
+void dotMatrisApModuGoster() {
+  lc.shutdown(MATRIX_A, false);
+  lc.setIntensity(MATRIX_A, 2);
+  lc.clearDisplay(MATRIX_A);
+  lc.clearDisplay(MATRIX_B);
+  matrisCiz(MATRIX_A, apmode);
+}
+
 // ---------------- Supabase Veri Gönderim Animasyonları ----------------
 // Supabase'e veri gönderilirken A displayinde gösterilecek bekleme sembolü
 const byte wait[8] = {

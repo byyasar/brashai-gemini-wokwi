@@ -224,6 +224,9 @@ void apModunuBaslat() {
   Serial.println("Wi-Fi bağlantısı kurulamadı. AP Modu başlatılıyor...");
   Serial.println("-------------------------------------------");
 
+  // Dot Matriste AP Modu simgesini göster (Display A: AP Modu İkonu, Display B: Temiz)
+  dotMatrisApModuGoster();
+
   WiFi.disconnect(true);
   WiFi.mode(WIFI_AP_STA); // Hem AP yayını yap hem de ağ tarayabil
   WiFi.setTxPower(WIFI_POWER_11dBm); // Aşırı akım çekmesini engelle
