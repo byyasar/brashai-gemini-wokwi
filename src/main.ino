@@ -129,12 +129,17 @@ void VeriGonderimi() {
 
   // Serial.println("Veri gonderimi basliyor (Loading animasyonu aktif)...");
   WifiBaslat();
+  bool basarili = false;
   if (wifiStatus) {
-    DatayiGonder(cihazId, fircaId);
+    basarili = DatayiGonder(cihazId, fircaId);
   }
   WifiDurdur(); // Her durumda WiFi'yi kapat
 
   loadingAnimasyonAktif = false; // Loading animasyonunu durdur
+
+  // Dot matriste veri gönderim sonucunu göster (Başarılı: ✔, Başarısız: ✖)
+  dotMatrisVeriGonderimSonuc(basarili);
+
   wifiMesgul = false;            // Sensör okumaya devam et
   donanimIslemleriAktif = false; // TaskCore1 normale dönebilir
 }
@@ -236,13 +241,14 @@ void TaskCore0Kodu(void *pvParameters) {
       mp3.loop();
     }
 
-    // Loading Animasyonu (Veri Gönderimi Sırasında)
+    // Loading Animasyonu (Veri Gönderimi Sırasında hem LED hem Dot Matrix)
     if (loadingAnimasyonAktif) {
       if (millis() - lastAnimUpdate > 100) { // 100ms hızında
         lastAnimUpdate = millis();
         strip.clear();
         strip.setPixelColor(animIndex, 0, 255, 0); // Yeşil
         strip.show();
+        dotMatrisVeriGonderimAnimasyonu(animIndex);
         animIndex = (animIndex + 1) % LED_COUNT;
       }
     }

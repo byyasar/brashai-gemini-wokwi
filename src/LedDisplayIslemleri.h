@@ -310,4 +310,61 @@ void dotMatrisWifiBasarisiz() {
   lc.clearDisplay(MATRIX_B);
 }
 
+// ---------------- Supabase Veri Gönderim Animasyonları ----------------
+// Alt matristen üst matrise doğru (buluta) yükselen veri oku (Upload) kareleri
+const byte UPLOAD_FRAME[6][8] = {
+  { 0, 0, 0, 0, 0, 0, 0b00000001, 0b00000011 },
+  { 0, 0, 0, 0, 0b00000011, 0b00000111, 0b00001100, 0b00011000 },
+  { 0, 0, 0b00000111, 0b00001111, 0b00011000, 0b00110000, 0b00110000, 0 },
+  { 0b00001111, 0b00011111, 0b00110000, 0b01100000, 0b01100000, 0, 0, 0 },
+  { 0b01111100, 0b11110000, 0b11000000, 0b11000000, 0, 0, 0, 0 },
+  { 0b11100000, 0b11000000, 0, 0, 0, 0, 0, 0 }
+};
+
+const byte FRAME_EMPTY[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+
+// Supabase'e veri gönderilirken alt matristen üst matrise kesintisiz yükselen ok animasyonu
+void dotMatrisVeriGonderimAnimasyonu(int step) {
+  int phase = step % 8;
+
+  if (phase < 6) {
+    matrisCiz(MATRIX_B, UPLOAD_FRAME[phase]);
+  } else {
+    matrisCiz(MATRIX_B, FRAME_EMPTY);
+  }
+
+  int aPhase = (phase >= 3) ? (phase - 3) : -1;
+  if (aPhase >= 0 && aPhase < 6) {
+    matrisCiz(MATRIX_A, UPLOAD_FRAME[aPhase]);
+  } else {
+    matrisCiz(MATRIX_A, FRAME_EMPTY);
+  }
+}
+
+// Veri gönderim sonucu: Başarılıysa animasyonlu Tik ✔, Başarısızsa Çarpı ✖
+void dotMatrisVeriGonderimSonuc(bool basarili) {
+  lc.clearDisplay(MATRIX_A);
+  lc.clearDisplay(MATRIX_B);
+
+  if (basarili) {
+    const byte animSteps[4][8] = {
+      { 0, 0, 0, 0, 0, 0, 0b00011000, 0b00011000 },
+      { 0, 0, 0, 0, 0b00011000, 0b00011000, 0b00011000, 0b00011000 },
+      { 0, 0, 0, 0b00011110, 0b00011000, 0b00011000, 0b00011000, 0b00011000 },
+      { 0, 0, 0b00011100, 0b00011110, 0b00011000, 0b00011000, 0b00011000, 0b00011000 }
+    };
+    for (int step = 0; step < 4; step++) {
+      matrisCiz(MATRIX_B, animSteps[step]);
+      delay(80);
+    }
+    delay(1200);
+  } else {
+    matrisCiz(MATRIX_B, ICON_CROSS);
+    delay(1200);
+  }
+
+  lc.clearDisplay(MATRIX_A);
+  lc.clearDisplay(MATRIX_B);
+}
+
 /*2- Kum saati bitis*/
