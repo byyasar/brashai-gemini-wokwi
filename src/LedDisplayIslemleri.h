@@ -311,25 +311,41 @@ void dotMatrisWifiBasarisiz() {
   lc.clearDisplay(MATRIX_B);
 }
 
-// ---------------- AP Modu İkonu (Display A) ----------------
-const byte apmode[8] = {
-  0b00110000,
-  0b01100000,
-  0b11100111,
-  0b10010001,
-  0b00001101,
-  0b00101101,
-  0b00100000,
-  0b00111100
+// ---------------- AP Modu İkonları (Display A ve Display B) ----------------
+// Üst Display (MATRIX_A)
+const byte animSteps_A[8] = {
+  0b10011110,
+  0b01000001,
+  0b00111001,
+  0b10111001,
+  0b10111001,
+  0b10000000,
+  0b10000000,
+  0b01111000
 };
 
-// A displayinde AP modu ikonunu gösterir
+// Alt Display (MATRIX_B)
+const byte animSteps_B[8] = {
+  0b00000011,
+  0b00000110,
+  0b00001100,
+  0b00011000,
+  0b00111000,
+  0b01100100,
+  0b11000010,
+  0b10000001
+};
+
+// AP modunda A ve B displaylerinde AP modu ikonlarını gösterir
 void dotMatrisApModuGoster() {
   lc.shutdown(MATRIX_A, false);
   lc.setIntensity(MATRIX_A, 2);
+  lc.shutdown(MATRIX_B, false);
+  lc.setIntensity(MATRIX_B, 2);
   lc.clearDisplay(MATRIX_A);
   lc.clearDisplay(MATRIX_B);
-  matrisCiz(MATRIX_A, apmode);
+  matrisCiz(MATRIX_A, animSteps_A);
+  matrisCiz(MATRIX_B, animSteps_B);
 }
 
 // ---------------- Supabase Veri Gönderim Animasyonları ----------------
