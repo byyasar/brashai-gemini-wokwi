@@ -657,7 +657,7 @@ void TaskCore1Kodu(void *pvParameters) {
             if (fircaDisarida) {
               Serial.println("[BUTON] Stop (Kum saati kapalıyken / 2. basış) -> Müzik Durduruluyor");
               muzikDurdurIstegi = true;  // Core 0'a müzik durdurma komutu
-              lc.clearDisplay(MATRIX_B); // Müzik durduğu için nota animasyonunu söndür
+              dotMatrisNotaGoster();     // B displayini silme, nota kalsın
               dotMatrisRakamGoster(aktifFirca); // A displayindeki fırça numarası kalsın
             } else {
               // Fırça yerindeyse ve kum saati zaten kapalıysa ekranları temizle
