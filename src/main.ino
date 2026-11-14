@@ -177,12 +177,13 @@ void DonanimIslemleri() {
   }
 
   digitalWrite(FAN_PIN, LOW);
-  Serial.println("[DONANIM] Fan kapandı, mavi ışık sönene kadar animasyonlar devam ediyor...");
+  lc.clearDisplay(MATRIX_A); // Fan durduğunda fan animasyonunu Display A'dan kaldır
+  Serial.println("[DONANIM] Fan kapandı, fan animasyonu kaldırıldı. Mavi ışık sönene kadar B displayinde animasyon devam ediyor...");
 
-  // 3. Fan kapandıktan sonra Mavi Işık sönene kadar (3 sn daha) devam etsin
+  // 3. Fan kapandıktan sonra Mavi Işık sönene kadar (3 sn daha) B displayinde devam etsin
   unsigned long lightStart = millis();
   while (millis() - lightStart < 3000) {
-    dotMatrisPervaneAdimi(frame++);
+    dotMatrisGulumsemeAdimi(frame++);
     delay(80); // 80ms hızında dönüş
   }
 

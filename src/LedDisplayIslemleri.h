@@ -627,6 +627,13 @@ void dotMatrisPervaneAdimi(int step) {
   dotMatrisKurutmaAdimi(step, step);
 }
 
+// Sadece B displayinde gülümseme (SMILE_ICON) animasyonu adımı (Fan durduğunda kullanılır)
+void dotMatrisGulumsemeAdimi(int step) {
+  lc.shutdown(MATRIX_B, false);
+  lc.setIntensity(MATRIX_B, 2);
+  matrisCiz(MATRIX_B, SMILE_ICON[step % 9]);
+}
+
 // ---------------- Müzik Notası Sallanma (Dans) Animasyon Kareleri (90° Sağa Döndürülmüş) ----------------
 // Notanın hem alt tarafı (kafalar) hem üst kolları komple sağa-sola sallanır
 const byte MUSIC_NOTE_FRAMES[4][8] = {
