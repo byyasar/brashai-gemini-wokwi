@@ -379,13 +379,16 @@ void dotMatrisVeriGonderimAnimasyonu(int step) {
   matrisCiz(MATRIX_B, SPINNER_FRAME[phase]);
 }
 
-// ---------------- Supabase Başarılı Gönderim Yıldız Animasyonu (Display A) ----------------
-const byte yildiz[5][8] = {
-  { 0b00100000, 0b00110001, 0b00111110, 0b11111100, 0b01111100, 0b00111110, 0b00110001, 0b00100000 },
-  { 0b00011000, 0b00100100, 0b01001010, 0b10001001, 0b10001001, 0b01011010, 0b00100100, 0b00011000 },
-  { 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00011000, 0b00011000, 0b00011000, 0b00011000 },
-  { 0b00000000, 0b00000000, 0b00000000, 0b00011110, 0b00011000, 0b00011000, 0b00011000, 0b00011000 },
-  { 0b00000000, 0b00000000, 0b00011100, 0b00011110, 0b00011000, 0b00011000, 0b00011000, 0b00011000 }
+// ---------------- Supabase Başarılı Gönderim Yıldız Sembolü (Display A) ----------------
+const byte yildiz[8] = {
+  0b10000100,
+  0b01101100,
+  0b01111100,
+  0b00111110,
+  0b00111111,
+  0b01111100,
+  0b01101100,
+  0b10000100
 };
 
 // Veri gönderim sonucu: Başarılıysa A'da Yıldız, B'de animasyonlu Tik ✔; Başarısızsa B'de Çarpı ✖
@@ -407,10 +410,9 @@ void dotMatrisVeriGonderimSonuc(bool basarili) {
     lc.shutdown(MATRIX_B, false);
     lc.setIntensity(MATRIX_B, 2);
 
+    matrisCiz(MATRIX_A, yildiz);
+
     for (int step = 0; step < 6; step++) {
-      if (step < 5) {
-        matrisCiz(MATRIX_A, yildiz[step]);
-      }
       matrisCiz(MATRIX_B, animSteps[step]);
       delay(100);
     }
