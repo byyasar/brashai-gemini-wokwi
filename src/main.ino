@@ -171,7 +171,7 @@ void DonanimIslemleri() {
 
   // 2. Fan Çalışırken (5 sn) A displayinde pervane, B displayinde gülümseme animasyonu
   unsigned long fanStart = millis();
-  while (millis() - fanStart < 5000) {
+  while (millis() - fanStart < 8000) {
     dotMatrisPervaneAdimi(frame++);
     delay(80); // 80ms hızında dönüş
   }
@@ -182,7 +182,7 @@ void DonanimIslemleri() {
 
   // 3. Fan kapandıktan sonra Mavi Işık sönene kadar (3 sn daha) B displayinde devam etsin
   unsigned long lightStart = millis();
-  while (millis() - lightStart < 3000) {
+  while (millis() - lightStart < 5000) {
     dotMatrisGulumsemeAdimi(frame++);
     delay(80); // 80ms hızında dönüş
   }
