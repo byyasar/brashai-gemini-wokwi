@@ -379,23 +379,41 @@ void dotMatrisVeriGonderimAnimasyonu(int step) {
   matrisCiz(MATRIX_B, SPINNER_FRAME[phase]);
 }
 
-// Veri gönderim sonucu: Başarılıysa animasyonlu Tik ✔, Başarısızsa Çarpı ✖
+// ---------------- Supabase Başarılı Gönderim Yıldız Animasyonu (Display A) ----------------
+const byte yildiz[5][8] = {
+  { 0b00100000, 0b00110001, 0b00111110, 0b11111100, 0b01111100, 0b00111110, 0b00110001, 0b00100000 },
+  { 0b00011000, 0b00100100, 0b01001010, 0b10001001, 0b10001001, 0b01011010, 0b00100100, 0b00011000 },
+  { 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00011000, 0b00011000, 0b00011000, 0b00011000 },
+  { 0b00000000, 0b00000000, 0b00000000, 0b00011110, 0b00011000, 0b00011000, 0b00011000, 0b00011000 },
+  { 0b00000000, 0b00000000, 0b00011100, 0b00011110, 0b00011000, 0b00011000, 0b00011000, 0b00011000 }
+};
+
+// Veri gönderim sonucu: Başarılıysa A'da Yıldız, B'de animasyonlu Tik ✔; Başarısızsa B'de Çarpı ✖
 void dotMatrisVeriGonderimSonuc(bool basarili) {
   lc.clearDisplay(MATRIX_A);
   lc.clearDisplay(MATRIX_B);
   if (basarili) {
-const byte animSteps[6][8] = {
-  { 0b00000000, 0b00000110, 0b00001100, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000 },
-  { 0b00000000, 0b00011110, 0b00111100, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000 },
-  { 0b00000000, 0b01111110, 0b01111100, 0b01000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000 },
-  { 0b00000000, 0b01111110, 0b01111100, 0b01100000, 0b01100000, 0b01000000, 0b00000000, 0b00000000 },
-  { 0b00000000, 0b01111100, 0b01111000, 0b01100000, 0b01100000, 0b01100000, 0b00100000, 0b00000000 },
-  { 0b00000000, 0b01111100, 0b01111000, 0b01100000, 0b01100000, 0b01100000, 0b00100000, 0b00000000 }
-};
-for (int step = 0; step < 6; step++) {
-  matrisCiz(MATRIX_B, animSteps[step]);
-  delay(100);
-}
+    const byte animSteps[6][8] = {
+      { 0b00000000, 0b00000110, 0b00001100, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000 },
+      { 0b00000000, 0b00011110, 0b00111100, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000 },
+      { 0b00000000, 0b01111110, 0b01111100, 0b01000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000 },
+      { 0b00000000, 0b01111110, 0b01111100, 0b01100000, 0b01100000, 0b01000000, 0b00000000, 0b00000000 },
+      { 0b00000000, 0b01111100, 0b01111000, 0b01100000, 0b01100000, 0b01100000, 0b00100000, 0b00000000 },
+      { 0b00000000, 0b01111100, 0b01111000, 0b01100000, 0b01100000, 0b01100000, 0b00100000, 0b00000000 }
+    };
+
+    lc.shutdown(MATRIX_A, false);
+    lc.setIntensity(MATRIX_A, 2);
+    lc.shutdown(MATRIX_B, false);
+    lc.setIntensity(MATRIX_B, 2);
+
+    for (int step = 0; step < 6; step++) {
+      if (step < 5) {
+        matrisCiz(MATRIX_A, yildiz[step]);
+      }
+      matrisCiz(MATRIX_B, animSteps[step]);
+      delay(100);
+    }
     delay(1200);
   } else {
     matrisCiz(MATRIX_B, ICON_CROSS);
