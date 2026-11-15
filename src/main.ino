@@ -275,9 +275,6 @@ void vs1053_eof_mp3(const char *info) {
   } else if (fircalamaAktif && (millis() - sonSarkiBaslamaZamani > 10000)) {
     Serial.println("[MP3] Fırçalama şarkısı normal süresinde bitti. Sıradaki şarkı talep edildi.");
     sonrakiSarkiyaGec = true;
-  } else if (girisMuzigiAktif && (millis() - sonSarkiBaslamaZamani > 3000)) {
-    Serial.println("[MP3] Giriş şarkısı bitti. Sıradaki rastgele giriş şarkısı talep edildi.");
-    sonrakiGirisSarkisinaGec = true;
   }
 }
 
@@ -308,13 +305,6 @@ void TaskCore0Kodu(void *pvParameters) {
       sonrakiSarkiyaGec = false;
       if (fircalamaAktif && klasor != "") {
         playRandomSongFromFolder(klasor.c_str());
-      }
-    }
-
-    if (sonrakiGirisSarkisinaGec) {
-      sonrakiGirisSarkisinaGec = false;
-      if (girisMuzigiAktif) {
-        playRandomSongFromFolder("/giris");
       }
     }
 
@@ -384,11 +374,6 @@ void TaskCore1Kodu(void *pvParameters) {
 
       if (!kapakAcik) {
         fircalarYerindeSayaci = 0; // Kapak kapandığında sahte yerinde sayımını anında sıfırla
-        if (girisMuzigiAktif) {
-          Serial.println("[KAPAK] Kapak kapandı -> Giriş müziği durduruluyor.");
-          girisMuzigiAktif = false;
-          muzikDurdurIstegi = true;
-        }
       }
 
       // Kapak ilk açıldığında beyaz LED'leri yak ve fırça değerlerini 5 defa kontrol et
@@ -479,12 +464,6 @@ void TaskCore1Kodu(void *pvParameters) {
       if (herhangiBirFircaDisarida) {
         fircalarYerindeSayaci = 0; // Fırça dışarıda olduğu sürece sayacı sıfırla
 
-        // Giriş müziği çalıyorsa durdur/devre dışı bırak
-        if (girisMuzigiAktif) {
-          girisMuzigiAktif = false;
-          Serial.println("[GİRİŞ MÜZİĞİ] Fırça alındı -> Giriş müziği sonlandırılıyor.");
-        }
-
         if (!fircalamaAktif) {
           Serial.print("[FIRCA] Fırça çıkarıldı (");
           Serial.print(fircaId);
@@ -502,15 +481,6 @@ void TaskCore1Kodu(void *pvParameters) {
           dotMatrisRakamGoster(secilenFircaNo);
         }
       } else {
-        // Kapak açık ve henüz hiçbir fırça alınmadıysa (ve yeni bir fırçalama bitip kurutma beklenmiyorsa):
-        // Herhangi bir diş fırçası alınana kadar 'giris' klasöründeki müzikleri random çal
-        if (kapakAcik && !fircalamaAktif && !fircalamaYapildi && !girisMuzigiAktif && !wifiMesgul && !donanimIslemleriAktif) {
-          Serial.println("[KAPAK] Kapak açık ve fırça bekleniyor -> Giriş klasöründeki müzikler rastgele başlatılıyor...");
-          girisMuzigiAktif = true;
-          klasor = "/giris";
-          muzikBaslatIstegi = true;
-        }
-
         // Yalnızca fırçalama aktifken (fırça dışarıdayken) fırçanın yerine konup konmadığını kontrol et
         if (fircalamaAktif) {
           // 1. Kapak tamamen açık olmalı!
@@ -582,11 +552,6 @@ void TaskCore1Kodu(void *pvParameters) {
     // Kapak kapandıysa durum kontrolü
     else if (!kapakAcik) {
       fircalarYerindeSayaci = 0; // Kapak kapalıyken sayaç sıfır tutulur
-
-      if (girisMuzigiAktif) {
-        girisMuzigiAktif = false;
-        muzikDurdurIstegi = true;
-      }
 
       if (fircalamaYapildi && !fircalamaAktif) {
         Serial.println("[KAPAK] Kapak kapandı ve fırçalama tamamlanmıştı -> Donanım kurutma işlemleri (Fan & Mavi Işık) başlatılıyor.");
