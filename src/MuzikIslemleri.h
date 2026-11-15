@@ -18,6 +18,11 @@ String path = "";
 volatile bool sarkiDurduruluyor = false;
 volatile unsigned long sonSarkiBaslamaZamani = 0;
 volatile bool sonrakiSarkiyaGec = false;
+volatile bool girisMuzigiAktif = false;
+volatile bool sonrakiGirisSarkisinaGec = false;
+volatile bool efektCalIstegi = false;
+volatile bool efektCaliniyor = false;
+String calinacakEfektDosyasi = "";
 
 VS1053 mp3(VS1053_CS, VS1053_DCS, VS1053_DREQ, VSPI, VS1053_MOSI, VS1053_MISO,
            VS1053_SCK);
@@ -145,5 +150,41 @@ void playRandomSongFromFolder(const char *folderPath) {
     sonrakiSarkiyaGec = false;
   } else {
     Serial.println("[ERROR] Playback failed definitively");
+  }
+}
+
+void playSongFile(const char *filePath) {
+  if (mp3.isRunning()) {
+    mp3.stop_mp3client();
+  }
+  Serial.print("[INFO] Playing specific file: ");
+  Serial.println(filePath);
+
+  path = String(filePath);
+
+  static bool ilkCalma = true;
+  if (!ilkCalma) {
+    mp3.begin();
+    delay(50);
+  }
+  ilkCalma = false;
+
+  mp3.setVolume(volume);
+  bool durum = mp3.connecttoFS(SD, path.c_str());
+  if (!durum) {
+    Serial.println("[WARN] connecttoFS dosya calinamadi, tekrar deneniyor...");
+    mp3.begin();
+    mp3.setVolume(volume);
+    durum = mp3.connecttoFS(SD, path.c_str());
+  }
+
+  if (durum) {
+    Serial.print("[INFO] File playback started | isRunning: ");
+    Serial.println(mp3.isRunning() ? "EVET" : "HAYIR");
+    isPlaying = true;
+    sonSarkiBaslamaZamani = millis();
+    sonrakiSarkiyaGec = false;
+  } else {
+    Serial.println("[ERROR] File playback failed definitively");
   }
 }

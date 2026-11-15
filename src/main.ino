@@ -149,8 +149,42 @@ void VeriGonderimi() {
 
   WifiDurdur(); // Her durumda WiFi'yi kapat
 
+  // Supabase'e veri başarıyla kaydedildiyse /efekt/tada.mp3 başlat
+  if (basarili) {
+    Serial.println("[EFEKT] Supabase verisi kaydedildi -> /efekt/tada.mp3 başlatılıyor...");
+    calinacakEfektDosyasi = "/efekt/tada.mp3";
+    efektCaliniyor = true;
+    efektCalIstegi = true;
+
+    // Core 0'ın şarkıyı başlatmasını bekle (maksimum 1 sn)
+    unsigned long waitStart = millis();
+    while (efektCalIstegi && millis() - waitStart < 1000) {
+      delay(10);
+    }
+    delay(50);
+  }
+
   // 3. Dot matriste veri gönderim sonucunu göster (Başarılı: ✔, Başarısız: ✖)
   dotMatrisVeriGonderimSonuc(basarili);
+
+  // 4. Tada müziği çalıyorsa, müzik tamamen bitene kadar bekle! (Ana ekrana hemen dönme)
+  if (basarili) {
+    Serial.println("[EFEKT] Tada müziği bitene kadar bekleniyor, ana ekrana dönülmüyor...");
+    unsigned long playStart = millis();
+    // Efekt ve mp3 çaldığı sürece bekle (güvenlik için maks 10 sn timeout)
+    while ((mp3.isRunning() || efektCaliniyor) && (millis() - playStart < 10000)) {
+      if (!mp3.isRunning() && millis() - playStart > 200) {
+        efektCaliniyor = false;
+        break;
+      }
+      delay(20);
+    }
+    Serial.println("[EFEKT] Tada müziği tamamlandı. Ekranlar temizleniyor.");
+    delay(300); // Ses bittikten sonra görsel için kısa bir rahatlama
+    lc.clearDisplay(MATRIX_A);
+    lc.clearDisplay(MATRIX_B);
+    efektCaliniyor = false;
+  }
 
   wifiMesgul = false;            // Sensör okumaya devam et
   donanimIslemleriAktif = false; // TaskCore1 normale dönebilir
@@ -232,10 +266,18 @@ void vs1053_info(const char *info) {
 
 // Şarkı kendiliğinden tamamen bittiğinde VS1053 kütüphanesi bu fonksiyonu çağırır
 void vs1053_eof_mp3(const char *info) {
-  // Manuel durdurma yapılıyorsa veya şarkı henüz yeni başladıysa (10 sn'den az) döngüyü engelle!
-  if (!sarkiDurduruluyor && fircalamaAktif && (millis() - sonSarkiBaslamaZamani > 10000)) {
-    Serial.println("[MP3] Şarkı normal süresinde bitti. Sıradaki şarkı talep edildi.");
+  // Manuel durdurma yapılıyorsa veya şarkı henüz yeni başladıysa (3 sn'den az) engelle
+  if (sarkiDurduruluyor) return;
+
+  if (efektCaliniyor) {
+    Serial.println("[MP3] Efekt (tada) şarkısı bitti.");
+    efektCaliniyor = false;
+  } else if (fircalamaAktif && (millis() - sonSarkiBaslamaZamani > 10000)) {
+    Serial.println("[MP3] Fırçalama şarkısı normal süresinde bitti. Sıradaki şarkı talep edildi.");
     sonrakiSarkiyaGec = true;
+  } else if (girisMuzigiAktif && (millis() - sonSarkiBaslamaZamani > 3000)) {
+    Serial.println("[MP3] Giriş şarkısı bitti. Sıradaki rastgele giriş şarkısı talep edildi.");
+    sonrakiGirisSarkisinaGec = true;
   }
 }
 
@@ -250,6 +292,11 @@ void TaskCore0Kodu(void *pvParameters) {
       muzikDurdurIstegi = false;
     }
 
+    if (efektCalIstegi) {
+      efektCalIstegi = false;
+      playSongFile(calinacakEfektDosyasi.c_str());
+    }
+
     if (muzikBaslatIstegi) {
       muzikBaslatIstegi = false;
       if (klasor != "") {
@@ -261,6 +308,13 @@ void TaskCore0Kodu(void *pvParameters) {
       sonrakiSarkiyaGec = false;
       if (fircalamaAktif && klasor != "") {
         playRandomSongFromFolder(klasor.c_str());
+      }
+    }
+
+    if (sonrakiGirisSarkisinaGec) {
+      sonrakiGirisSarkisinaGec = false;
+      if (girisMuzigiAktif) {
+        playRandomSongFromFolder("/giris");
       }
     }
 
@@ -330,6 +384,11 @@ void TaskCore1Kodu(void *pvParameters) {
 
       if (!kapakAcik) {
         fircalarYerindeSayaci = 0; // Kapak kapandığında sahte yerinde sayımını anında sıfırla
+        if (girisMuzigiAktif) {
+          Serial.println("[KAPAK] Kapak kapandı -> Giriş müziği durduruluyor.");
+          girisMuzigiAktif = false;
+          muzikDurdurIstegi = true;
+        }
       }
 
       // Kapak ilk açıldığında beyaz LED'leri yak ve fırça değerlerini 5 defa kontrol et
@@ -420,6 +479,12 @@ void TaskCore1Kodu(void *pvParameters) {
       if (herhangiBirFircaDisarida) {
         fircalarYerindeSayaci = 0; // Fırça dışarıda olduğu sürece sayacı sıfırla
 
+        // Giriş müziği çalıyorsa durdur/devre dışı bırak
+        if (girisMuzigiAktif) {
+          girisMuzigiAktif = false;
+          Serial.println("[GİRİŞ MÜZİĞİ] Fırça alındı -> Giriş müziği sonlandırılıyor.");
+        }
+
         if (!fircalamaAktif) {
           Serial.print("[FIRCA] Fırça çıkarıldı (");
           Serial.print(fircaId);
@@ -437,75 +502,91 @@ void TaskCore1Kodu(void *pvParameters) {
           dotMatrisRakamGoster(secilenFircaNo);
         }
       } else {
-        // Tüm fırçalar yerinde görünüyor, ancak:
-        // 1. Kapak tamamen açık olmalı!
-        // 2. Ortam LDR'si aydınlık olmalı (kapak kapanırken ortam kararır, bu sahte algılamayı önler!)
-        if (kapakAcik && ortamLdr < 2000) {
-          fircalarYerindeSayaci++;
-        } else {
-          fircalarYerindeSayaci = 0;
+        // Kapak açık ve henüz hiçbir fırça alınmadıysa (ve yeni bir fırçalama bitip kurutma beklenmiyorsa):
+        // Herhangi bir diş fırçası alınana kadar 'giris' klasöründeki müzikleri random çal
+        if (kapakAcik && !fircalamaAktif && !fircalamaYapildi && !girisMuzigiAktif && !wifiMesgul && !donanimIslemleriAktif) {
+          Serial.println("[KAPAK] Kapak açık ve fırça bekleniyor -> Giriş klasöründeki müzikler rastgele başlatılıyor...");
+          girisMuzigiAktif = true;
+          klasor = "/giris";
+          muzikBaslatIstegi = true;
         }
 
-        if (fircalarYerindeSayaci >= 15) {
-          fircalarYerindeSayaci = 0;
-
-          // Çıkarılmış olan fırçanın LDR sensörünü 5 kez stabil ölçerek gerçekten yerine oturduğunu teyit et
-          bool gercektenYerinde = true;
-
-          // Ortam ışığı hala aydınlık mı ve kapak hala açık mı? (Kapak kapanıyorsa ortam kararır!)
-          int guncelOrtam = stabilAnalogOku(ORTAMLDR_PIN, 5, 20);
-          if (guncelOrtam > 2000 || !kapakAcik) {
-            gercektenYerinde = false; // Kapak kapanıyor veya ortam karanlık, sahte algılama!
-            Serial.println("[FIRCA] Yanlış alarm: Ortam karanlık veya kapak kapanıyor, fırça yerine kondu sayılamaz!");
+        // Yalnızca fırçalama aktifken (fırça dışarıdayken) fırçanın yerine konup konmadığını kontrol et
+        if (fircalamaAktif) {
+          // 1. Kapak tamamen açık olmalı!
+          // 2. Ortam LDR'si aydınlık olmalı (kapak kapanırken ortam kararır, bu sahte algılamayı önler!)
+          if (kapakAcik && ortamLdr < 2000) {
+            fircalarYerindeSayaci++;
+          } else {
+            fircalarYerindeSayaci = 0;
           }
 
-          if (sonGosterilenFircaNo > 0 && gercektenYerinde) {
-            int kontrolPin = (sonGosterilenFircaNo == 1) ? FIRCA1_PIN :
-                             (sonGosterilenFircaNo == 2) ? FIRCA2_PIN :
-                             (sonGosterilenFircaNo == 3) ? FIRCA3_PIN :
-                             (sonGosterilenFircaNo == 4) ? FIRCA4_PIN : FIRCA5_PIN;
-            int dogrulamaDegeri = stabilAnalogOku(kontrolPin, 5, 20);
-            int esik = min(3800, (sonGosterilenFircaNo == 5) ? (guncelOrtam + 1000) : (guncelOrtam + 1500));
-            if (dogrulamaDegeri <= esik) {
-              gercektenYerinde = false; // Fırça hala dışarıda, yanlış alarm!
-              Serial.println("[FIRCA] Yanlış alarm: Fırça hala dışarıda, veri gönderimi yapılmıyor.");
-            }
-          }
+          if (fircalarYerindeSayaci >= 15) {
+            fircalarYerindeSayaci = 0;
 
-          // YALNIZCA FIRÇA KESİN OLARAK YERİNE KONDUYSA BİTİR VE VERİ GÖNDER!
-          if (gercektenYerinde && (mp3.isRunning() || isPlaying || fircalamaAktif)) {
-            Serial.println("[FIRCA] Fırça kesin olarak yerine kondu -> Müzik durduruluyor ve veri gönderiliyor...");
-            sonGosterilenFircaNo = 0;
-            muzikDurdurIstegi = true; // Core 0'a güvenli müzik durdurma komutu
-            while (muzikDurdurIstegi) {
-              delay(10);
+            // Çıkarılmış olan fırçanın LDR sensörünü 5 kez stabil ölçerek gerçekten yerine oturduğunu teyit et
+            bool gercektenYerinde = true;
+
+            // Ortam ışığı hala aydınlık mı ve kapak hala açık mı? (Kapak kapanıyorsa ortam kararır!)
+            int guncelOrtam = stabilAnalogOku(ORTAMLDR_PIN, 5, 20);
+            if (guncelOrtam > 2000 || !kapakAcik) {
+              gercektenYerinde = false; // Kapak kapanıyor veya ortam karanlık, sahte algılama!
+              Serial.println("[FIRCA] Yanlış alarm: Ortam karanlık veya kapak kapanıyor, fırça yerine kondu sayılamaz!");
             }
 
-            // Kum saatini durdur ve dot matrix ekranları söndür
-            if (calis) {
-              calis = false;
-              lc.clearDisplay(MATRIX_A);
-              lc.clearDisplay(MATRIX_B);
-            } else {
-              dotMatrisRakamGoster(0); // A displayindeki rakamı temizle
-              lc.clearDisplay(MATRIX_B); // B displayindeki notayı temizle
+            if (sonGosterilenFircaNo > 0 && gercektenYerinde) {
+              int kontrolPin = (sonGosterilenFircaNo == 1) ? FIRCA1_PIN :
+                               (sonGosterilenFircaNo == 2) ? FIRCA2_PIN :
+                               (sonGosterilenFircaNo == 3) ? FIRCA3_PIN :
+                               (sonGosterilenFircaNo == 4) ? FIRCA4_PIN : FIRCA5_PIN;
+              int dogrulamaDegeri = stabilAnalogOku(kontrolPin, 5, 20);
+              int esik = min(3800, (sonGosterilenFircaNo == 5) ? (guncelOrtam + 1000) : (guncelOrtam + 1500));
+              if (dogrulamaDegeri <= esik) {
+                gercektenYerinde = false; // Fırça hala dışarıda, yanlış alarm!
+                Serial.println("[FIRCA] Yanlış alarm: Fırça hala dışarıda, veri gönderimi yapılmıyor.");
+              }
             }
 
-            if (fircalamaAktif) {
+            // YALNIZCA FIRÇA KESİN OLARAK YERİNE KONDUYSA BİTİR VE VERİ GÖNDER!
+            if (gercektenYerinde) {
+              Serial.println("[FIRCA] Fırça kesin olarak yerine kondu -> Müzik durduruluyor ve veri gönderiliyor...");
+              sonGosterilenFircaNo = 0;
+              muzikDurdurIstegi = true; // Core 0'a güvenli müzik durdurma komutu
+              while (muzikDurdurIstegi) {
+                delay(10);
+              }
+
+              // Kum saatini durdur ve dot matrix ekranları söndür
+              if (calis) {
+                calis = false;
+                lc.clearDisplay(MATRIX_A);
+                lc.clearDisplay(MATRIX_B);
+              } else {
+                dotMatrisRakamGoster(0); // A displayindeki rakamı temizle
+                lc.clearDisplay(MATRIX_B); // B displayindeki notayı temizle
+              }
+
               VeriGonderimi();
               fircalamaAktif = false;
               fircalamaYapildi = true; // Kapak kapanınca fan çalışsın diye işaretle
-            }
 
-            fircaId = "";
-            klasor = "";
+              fircaId = "";
+              klasor = "";
+            }
           }
+        } else {
+          fircalarYerindeSayaci = 0;
         }
       }
     }
     // Kapak kapandıysa durum kontrolü
     else if (!kapakAcik) {
       fircalarYerindeSayaci = 0; // Kapak kapalıyken sayaç sıfır tutulur
+
+      if (girisMuzigiAktif) {
+        girisMuzigiAktif = false;
+        muzikDurdurIstegi = true;
+      }
 
       if (fircalamaYapildi && !fircalamaAktif) {
         Serial.println("[KAPAK] Kapak kapandı ve fırçalama tamamlanmıştı -> Donanım kurutma işlemleri (Fan & Mavi Işık) başlatılıyor.");

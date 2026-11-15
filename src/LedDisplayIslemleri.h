@@ -432,14 +432,12 @@ void dotMatrisVeriGonderimSonuc(bool basarili) {
       matrisCiz(MATRIX_B, animSteps[step]);
       delay(100);
     }
-    delay(1200);
   } else {
     matrisCiz(MATRIX_B, ICON_CROSS);
     delay(1200);
+    lc.clearDisplay(MATRIX_A);
+    lc.clearDisplay(MATRIX_B);
   }
-
-  lc.clearDisplay(MATRIX_A);
-  lc.clearDisplay(MATRIX_B);
 }
 
 // ---------------- 1-5 Fırça Rakam Bitmapleri (90° Sağa Döndürülmüş) ----------------
