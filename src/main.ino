@@ -350,6 +350,11 @@ void TaskCore1Kodu(void *pvParameters) {
   static unsigned long lastNoteAnimTime = 0;
   static int noteAnimStep = 0;
   static bool gulenYuzAktif = false;
+  static unsigned long kumSaatiBaslangicZamani = 0;
+  static unsigned long kumSaatiHedefSureMs = 0;
+  static bool havaiFisekAktif = false;
+  static int havaiFisekStep = 0;
+  static unsigned long lastHavaiFisekTime = 0;
 
   while (true) {
     // Kapak MOSFET sürücüsünün sürekli aktif (HIGH) kalmasını sağla
@@ -519,7 +524,8 @@ void TaskCore1Kodu(void *pvParameters) {
 
             // YALNIZCA FIRÇA KESİN OLARAK YERİNE KONDUYSA BİTİR VE VERİ GÖNDER!
             if (gercektenYerinde) {
-              Serial.println("[FIRCA] Fırça kesin olarak yerine kondu -> Müzik durduruluyor ve veri gönderiliyor...");
+              Serial.println("[FIRCA] Fırça kesin olarak yerine kondu -> Müzik ve Havai Fişek durduruluyor, veri gönderiliyor...");
+              havaiFisekAktif = false;
               sonGosterilenFircaNo = 0;
               muzikDurdurIstegi = true; // Core 0'a güvenli müzik durdurma komutu
               while (muzikDurdurIstegi) {
@@ -529,12 +535,10 @@ void TaskCore1Kodu(void *pvParameters) {
               // Kum saatini durdur ve dot matrix ekranları söndür
               if (calis) {
                 calis = false;
-                lc.clearDisplay(MATRIX_A);
-                lc.clearDisplay(MATRIX_B);
-              } else {
-                dotMatrisRakamGoster(0); // A displayindeki rakamı temizle
-                lc.clearDisplay(MATRIX_B); // B displayindeki notayı temizle
+                kumSaatiHedefSureMs = 0;
               }
+              lc.clearDisplay(MATRIX_A);
+              lc.clearDisplay(MATRIX_B);
 
               VeriGonderimi();
               fircalamaAktif = false;
@@ -631,6 +635,8 @@ void TaskCore1Kodu(void *pvParameters) {
 
         // Kum saatini ve müziği durdur
         calis = false;
+        havaiFisekAktif = false;
+        kumSaatiHedefSureMs = 0;
         lc.clearDisplay(MATRIX_A);
         lc.clearDisplay(MATRIX_B);
         muzikDurdurIstegi = true;
@@ -656,6 +662,8 @@ void TaskCore1Kodu(void *pvParameters) {
           lastDebounce = millis();
           Serial.println("[BUTON] Play -> 2 dk (120 sn) Kum Saati baslatiliyor");
           setHourglassDuration(120); // 2 dakika kum saati
+          kumSaatiHedefSureMs = 120000;
+          kumSaatiBaslangicZamani = millis();
           for (byte i = 0; i < 2; i++) {
             lc.shutdown(i, false);
             lc.setIntensity(i, 2);
@@ -677,10 +685,12 @@ void TaskCore1Kodu(void *pvParameters) {
           int aktifFirca = (secilenFircaNo > 0) ? secilenFircaNo : sonGosterilenFircaNo;
           bool fircaDisarida = (fircalamaAktif && aktifFirca > 0);
 
-          if (calis) {
-            // DURUM 1: Kum saati çalışıyorken basıldı -> İLK BASIŞ: Yalnızca kum saatini durdur
-            Serial.println("[BUTON] Stop (1. Basış) -> Kum Saati Durduruldu, Müzik Devam Ediyor");
+          if (calis || havaiFisekAktif) {
+            // DURUM 1: Kum saati veya havai fişek çalışıyorken basıldı -> İLK BASIŞ: Yalnızca kum saatini durdur
+            Serial.println("[BUTON] Stop (1. Basış) -> Kum Saati / Havai Fişek Durduruldu, Müzik Devam Ediyor");
             calis = false;
+            havaiFisekAktif = false;
+            kumSaatiHedefSureMs = 0;
 
             if (fircaDisarida) {
               Serial.print("[BUTON] Fırça hala dışarıda (Fırça ");
@@ -738,6 +748,8 @@ void TaskCore1Kodu(void *pvParameters) {
           // Kapak KAPALI ise: 20 sn Kum Saati
           Serial.println("[BUTON] Kapak Kapali + Refresh -> 20 sn Kum Saati baslatiliyor");
           setHourglassDuration(20); // 20 saniye kum saati
+          kumSaatiHedefSureMs = 20000;
+          kumSaatiBaslangicZamani = millis();
           for (byte i = 0; i < 2; i++) {
             lc.shutdown(i, false);
             lc.setIntensity(i, 2);
@@ -752,6 +764,8 @@ void TaskCore1Kodu(void *pvParameters) {
             lc.setIntensity(i, 2);
           }
           calis = false;
+          havaiFisekAktif = false;
+          kumSaatiHedefSureMs = 0;
           resetTime();
         }
       }
@@ -789,6 +803,46 @@ void TaskCore1Kodu(void *pvParameters) {
       // //Serial.println(gravity);
       bool moved = updateMatrix();
       bool dropped = dropParticle();
+
+      // Kum saati süresi doldu mu kontrolü (2 dk veya 20 sn)
+      if (kumSaatiHedefSureMs > 0 && (millis() - kumSaatiBaslangicZamani >= kumSaatiHedefSureMs)) {
+        Serial.println("[KUM SAATİ] Süre doldu!");
+        calis = false;
+        kumSaatiHedefSureMs = 0;
+
+        // Tada sesi bir kez çalsın
+        Serial.println("[EFEKT] Süre bitti -> /efekt/tada.mp3 bir kez çalınıyor...");
+        calinacakEfektDosyasi = "/efekt/tada.mp3";
+        efektCalIstegi = true;
+
+        int aktifFirca = (secilenFircaNo > 0) ? secilenFircaNo : sonGosterilenFircaNo;
+        if (fircalamaAktif && (herhangiBirFircaDisarida || aktifFirca > 0)) {
+          // Fırça yerinde değilse: fırça yerine takılana kadar havai fişek animasyonu çalışsın
+          Serial.println("[KUM SAATİ] Fırça dışarıda -> Fırça yerine takılana kadar Havai Fişek sürekli dönecek.");
+          havaiFisekAktif = true;
+          havaiFisekStep = 0;
+          lastHavaiFisekTime = millis();
+          lc.shutdown(MATRIX_A, false);
+          lc.setIntensity(MATRIX_A, 2);
+          lc.shutdown(MATRIX_B, false);
+          lc.setIntensity(MATRIX_B, 2);
+          dotMatrisHavaiFisekAdimi(0);
+        } else {
+          // Fırça yerindeyse (örn. kapalı kapak 20 sn testi) normal 1 kez havai fişek çalışsın
+          Serial.println("[KUM SAATİ] Fırça yerinde -> Havai fişek 1 kez oynatılıyor.");
+          dotMatrisHavaiFisekCalistir();
+          if (kapakAcik && !herhangiBirFircaDisarida) {
+            gulenYuzAktif = false;
+          }
+        }
+      }
+    } else if (havaiFisekAktif) {
+      // Fırça yerine takılana kadar havai fişek animasyonu 200ms periyotla sürekli dönsün
+      if (millis() - lastHavaiFisekTime >= 200) {
+        lastHavaiFisekTime = millis();
+        dotMatrisHavaiFisekAdimi(havaiFisekStep);
+        havaiFisekStep = (havaiFisekStep + 1) % 13;
+      }
     } else if (fircalamaAktif && !wifiMesgul && !donanimIslemleriAktif && (isPlaying || mp3.isRunning())) {
       // Kum saati çalışmıyorken, fırça henüz yerine konmamışsa VE müzik çalıyorsa
       // B displayinde müzik notası sallanmaya kesintisiz devam etsin
