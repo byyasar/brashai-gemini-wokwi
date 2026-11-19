@@ -20,6 +20,7 @@ volatile unsigned long sonSarkiBaslamaZamani = 0;
 volatile bool sonrakiSarkiyaGec = false;
 volatile bool efektCalIstegi = false;
 volatile bool efektCaliniyor = false;
+volatile bool hosgeldinizCaliniyor = false;
 String calinacakEfektDosyasi = "";
 
 VS1053 mp3(VS1053_CS, VS1053_DCS, VS1053_DREQ, VSPI, VS1053_MOSI, VS1053_MISO,
@@ -28,6 +29,7 @@ VS1053 mp3(VS1053_CS, VS1053_DCS, VS1053_DREQ, VSPI, VS1053_MOSI, VS1053_MISO,
 void MuzikDurdurFnc() {
   sarkiDurduruluyor = true;
   sonrakiSarkiyaGec = false;
+  hosgeldinizCaliniyor = false;
   if (mp3.isRunning()) {
     mp3.stop_mp3client();
   }
@@ -151,7 +153,7 @@ void playRandomSongFromFolder(const char *folderPath) {
   }
 }
 
-void playSongFile(const char *filePath) {
+bool playSongFile(const char *filePath) {
   if (mp3.isRunning()) {
     mp3.stop_mp3client();
   }
@@ -182,7 +184,9 @@ void playSongFile(const char *filePath) {
     isPlaying = true;
     sonSarkiBaslamaZamani = millis();
     sonrakiSarkiyaGec = false;
+    return true;
   } else {
     Serial.println("[ERROR] File playback failed definitively");
+    return false;
   }
 }

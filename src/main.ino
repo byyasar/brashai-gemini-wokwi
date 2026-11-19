@@ -272,6 +272,10 @@ void vs1053_eof_mp3(const char *info) {
   if (efektCaliniyor) {
     Serial.println("[MP3] Efekt (tada) şarkısı bitti.");
     efektCaliniyor = false;
+  } else if (hosgeldinizCaliniyor) {
+    Serial.println("[MP3] Hoşgeldiniz anonsu bitti -> İlgili fırça klasöründeki müzik başlatılıyor...");
+    hosgeldinizCaliniyor = false;
+    sonrakiSarkiyaGec = true;
   } else if (fircalamaAktif && (millis() - sonSarkiBaslamaZamani > 10000)) {
     Serial.println("[MP3] Fırçalama şarkısı normal süresinde bitti. Sıradaki şarkı talep edildi.");
     sonrakiSarkiyaGec = true;
@@ -296,13 +300,51 @@ void TaskCore0Kodu(void *pvParameters) {
 
     if (muzikBaslatIstegi) {
       muzikBaslatIstegi = false;
-      if (klasor != "") {
-        playRandomSongFromFolder(klasor.c_str());
+      hosgeldinizCaliniyor = false;
+
+      // Önce hosgeldiniz klasörü altında fırça adı mp3 dosyasını ara ve çal
+      bool calindi = false;
+      if (fircaId != "") {
+        // 1. /hosgeldiniz/Firca1.mp3 denemesi
+        String dosyaYolu = "/hosgeldiniz/" + fircaId + ".mp3";
+        if (SD.exists(dosyaYolu.c_str())) {
+          calindi = playSongFile(dosyaYolu.c_str());
+        }
+
+        // 2. /hosgeldiniz/firca1.mp3 denemesi (küçük harf)
+        if (!calindi) {
+          String kucukFircaId = fircaId;
+          kucukFircaId.toLowerCase();
+          String dosyaYoluKucuk = "/hosgeldiniz/" + kucukFircaId + ".mp3";
+          if (SD.exists(dosyaYoluKucuk.c_str())) {
+            calindi = playSongFile(dosyaYoluKucuk.c_str());
+          }
+        }
+
+        // 3. /hosgeldiniz/1.mp3 denemesi (rakam)
+        if (!calindi && klasor != "") {
+          String dosyaYoluNo = "/hosgeldiniz" + klasor + ".mp3";
+          if (SD.exists(dosyaYoluNo.c_str())) {
+            calindi = playSongFile(dosyaYoluNo.c_str());
+          }
+        }
+      }
+
+      if (calindi) {
+        Serial.println("[INFO] Hoşgeldiniz anonsu başlatıldı. Bittiğinde fırça şarkısına geçilecek.");
+        hosgeldinizCaliniyor = true;
+      } else {
+        Serial.println("[WARN] Hoşgeldiniz anons dosyası bulunamadı, doğrudan fırça klasöründeki müzik başlatılıyor...");
+        hosgeldinizCaliniyor = false;
+        if (klasor != "") {
+          playRandomSongFromFolder(klasor.c_str());
+        }
       }
     }
 
     if (sonrakiSarkiyaGec) {
       sonrakiSarkiyaGec = false;
+      hosgeldinizCaliniyor = false;
       if (fircalamaAktif && klasor != "") {
         playRandomSongFromFolder(klasor.c_str());
       }
@@ -807,12 +849,26 @@ void TaskCore1Kodu(void *pvParameters) {
       // Kum saati süresi doldu mu kontrolü (2 dk veya 20 sn)
       if (kumSaatiHedefSureMs > 0 && (millis() - kumSaatiBaslangicZamani >= kumSaatiHedefSureMs)) {
         Serial.println("[KUM SAATİ] Süre doldu!");
+        bool ikiDakikaTamamlandi = (kumSaatiHedefSureMs >= 100000);
         calis = false;
         kumSaatiHedefSureMs = 0;
 
-        // Tada sesi bir kez çalsın
-        Serial.println("[EFEKT] Süre bitti -> /efekt/tada.mp3 bir kez çalınıyor...");
-        calinacakEfektDosyasi = "/efekt/tada.mp3";
+        // 2 dk kum saati süresini tamamlarsa /efekt/alkis.mp3 çalsın
+        if (ikiDakikaTamamlandi) {
+          Serial.println("[EFEKT] 2 dk kum saati tamamlandı -> /efekt/alkis.mp3 çalınıyor...");
+          if (SD.exists("/efekt/alkis.mp3")) {
+            calinacakEfektDosyasi = "/efekt/alkis.mp3";
+          } else if (SD.exists("/efekt/Alkis.mp3")) {
+            calinacakEfektDosyasi = "/efekt/Alkis.mp3";
+          } else {
+            Serial.println("[WARN] /efekt/alkis.mp3 bulunamadı, fallback /efekt/tada.mp3");
+            calinacakEfektDosyasi = "/efekt/tada.mp3";
+          }
+        } else {
+          Serial.println("[EFEKT] Süre bitti -> /efekt/tada.mp3 bir kez çalınıyor...");
+          calinacakEfektDosyasi = "/efekt/tada.mp3";
+        }
+        efektCaliniyor = true;
         efektCalIstegi = true;
 
         int aktifFirca = (secilenFircaNo > 0) ? secilenFircaNo : sonGosterilenFircaNo;
