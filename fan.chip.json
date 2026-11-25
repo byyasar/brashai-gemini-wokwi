@@ -1,0 +1,32 @@
+{
+  "name": "Cooling Fan Breakout",
+  "author": "BrashAI",
+  "pins": [
+    "VCC",
+    "GND",
+    "IN"
+  ],
+  "display": {
+    "width": 128,
+    "height": 128,
+    "type": "lcd"
+  },
+  "controls": [
+    {
+      "id": "test_spin",
+      "label": "Manuel Test (0=Oto, 1=Dondur)",
+      "type": "range",
+      "min": 0,
+      "max": 1,
+      "step": 1
+    },
+    {
+      "id": "target_rpm",
+      "label": "Hiz (RPM)",
+      "type": "range",
+      "min": 800,
+      "max": 3000,
+      "step": 200
+    }
+  ]
+}

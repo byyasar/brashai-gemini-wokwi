@@ -1,0 +1,26 @@
+{
+  "name": "VS1053 Speaker Module",
+  "author": "BrashAI",
+  "pins": [
+    "SPK_IN",
+    "SPK_OUT",
+    "LEFT",
+    "RIGHT",
+    "VCC",
+    "GND"
+  ],
+  "display": {
+    "width": 128,
+    "height": 128
+  },
+  "controls": [
+    {
+      "id": "mute",
+      "label": "Sessize Al (0/1)",
+      "type": "range",
+      "min": 0,
+      "max": 1,
+      "step": 1
+    }
+  ]
+}

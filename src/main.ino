@@ -39,7 +39,12 @@ u16_t firca4Ldr = 0;
 u16_t firca5Ldr = 0;
 u16_t ortamLdr = 0;
 
-u16_t LdrEsikDeger = 2000;
+// LDR Referans Eşiği (Işık arttıkça ADC değeri düşer)
+// Fırça: <= 800 dışarıda (aydınlık), > 800 yerinde (karanlık)
+// Ortam: < 2000 aydınlık/normal, >= 2000 tam karanlık (kapak kapanıyor)
+#define LDR_ESIK_DEGER 800
+#define ORTAM_KARANLIK_ESIK 2000
+u16_t LdrEsikDeger = LDR_ESIK_DEGER;
 
 Adafruit_NeoPixel strip(LED_COUNT, SERITLED_PIN, NEO_GRB + NEO_KHZ800);
 
@@ -49,6 +54,8 @@ String fircaId = "";
 
 void setup() {
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); // Düşük voltaj/brownout resetini engelle
+  disableCore0WDT();                          // CPU 0 Task Watchdog resetini engelle (Wokwi simülasyon SPI/MP3 yükü için)
+  disableLoopWDT();
   Serial.begin(115200);
   delay(300);
   Serial.println("\n[BrashAI] Sistem baslatiliyor...");
@@ -82,11 +89,24 @@ void setup() {
   // İlk açılışta Wi-Fi kontrolü (Bağlanamazsa AP moduna geçer)
   WifiIlkAcilisKontrol();
 
+  // Paylaşılan SPI hattında SD kart başlatılmadan önce tüm CS pinlerini HIGH (pasif) tut
+  pinMode(SD_CS, OUTPUT);
+  digitalWrite(SD_CS, HIGH);
+  pinMode(VS1053_CS, OUTPUT);
+  digitalWrite(VS1053_CS, HIGH);
+  pinMode(VS1053_DCS, OUTPUT);
+  digitalWrite(VS1053_DCS, HIGH);
+
   SPI.begin(VS1053_SCK, VS1053_MISO, VS1053_MOSI);
-  if (!SD.begin(SD_CS, SPI, 1000000)) { // 1 MHz SPI hızı
-    // Serial.println("SD Card initialization failed!");
-    while (!SD.begin(SD_CS))
-      ;
+  if (!SD.begin(SD_CS, SPI, 4000000)) { // 4 MHz kararlı SPI hızı
+    Serial.println("[WARN] SD Card initialization failed! Yeniden deneniyor...");
+    while (true) {
+      SD.end();
+      delay(200);
+      if (SD.begin(SD_CS, SPI, 4000000)) {
+        break;
+      }
+    }
   }
 
   // SD kart işlemleri tamamlandı -> Kapak gerilimi MOSFET sürücüsünü aktif et (GPIO 1)
@@ -105,11 +125,11 @@ void setup() {
   delay(500);
   // Serial.println("ESP32 Dual-Core FreeRTOS başlıyor...");
 
-  // Core 0’a görev atama
-  xTaskCreatePinnedToCore(TaskCore0Kodu, "TaskCore 0", 8192, NULL, 1,
+  // Core 0’a görev atama (MP3 / SD / Animasyon)
+  xTaskCreatePinnedToCore(TaskCore0Kodu, "TaskCore 0", 12288, NULL, 1,
                           &TaskCore0, 0);
-  // Core 1’e görev atama
-  xTaskCreatePinnedToCore(TaskCore1Kodu, "TaskCore 1", 8192, NULL, 1,
+  // Core 1’e görev atama (Sensör / WiFi / HTTPS-TLS Supabase için 16KB stack)
+  xTaskCreatePinnedToCore(TaskCore1Kodu, "TaskCore 1", 16384, NULL, 1,
                           &TaskCore1, 1);
 }
 
@@ -143,47 +163,20 @@ void VeriGonderimi() {
     basarili = DatayiGonder(cihazId, fircaId);
 
     loadingAnimasyonAktif = false; // Gönderim bitince animasyonu durdur
+    delay(150);                    // Core 0 animasyon turunun bitmesini bekle (SPI/Matrix çakışmasını önle)
   } else {
     Serial.println("[Veri] İnternet bağlantısı yok, veri gönderilemedi!");
   }
 
   WifiDurdur(); // Her durumda WiFi'yi kapat
 
-  // Supabase'e veri başarıyla kaydedildiyse /efekt/tada.mp3 başlat
-  if (basarili) {
-    Serial.println("[EFEKT] Supabase verisi kaydedildi -> /efekt/tada.mp3 başlatılıyor...");
-    calinacakEfektDosyasi = "/efekt/tada.mp3";
-    efektCaliniyor = true;
-    efektCalIstegi = true;
-
-    // Core 0'ın şarkıyı başlatmasını bekle (maksimum 1 sn)
-    unsigned long waitStart = millis();
-    while (efektCalIstegi && millis() - waitStart < 1000) {
-      delay(10);
-    }
-    delay(50);
-  }
-
   // 3. Dot matriste veri gönderim sonucunu göster (Başarılı: ✔, Başarısız: ✖)
+  // (Fırça yerine konduğunda çalan /efekt/tada.mp3 sesi devre dışı bırakıldı)
   dotMatrisVeriGonderimSonuc(basarili);
-
-  // 4. Tada müziği çalıyorsa, müzik tamamen bitene kadar bekle! (Ana ekrana hemen dönme)
   if (basarili) {
-    Serial.println("[EFEKT] Tada müziği bitene kadar bekleniyor, ana ekrana dönülmüyor...");
-    unsigned long playStart = millis();
-    // Efekt ve mp3 çaldığı sürece bekle (güvenlik için maks 10 sn timeout)
-    while ((mp3.isRunning() || efektCaliniyor) && (millis() - playStart < 10000)) {
-      if (!mp3.isRunning() && millis() - playStart > 200) {
-        efektCaliniyor = false;
-        break;
-      }
-      delay(20);
-    }
-    Serial.println("[EFEKT] Tada müziği tamamlandı. Ekranlar temizleniyor.");
-    delay(300); // Ses bittikten sonra görsel için kısa bir rahatlama
+    delay(1000);
     lc.clearDisplay(MATRIX_A);
     lc.clearDisplay(MATRIX_B);
-    efektCaliniyor = false;
   }
 
   wifiMesgul = false;            // Sensör okumaya devam et
@@ -243,11 +236,13 @@ void BitirmeIslemleri() {
   lc.clearDisplay(MATRIX_A);
   lc.clearDisplay(MATRIX_B);
 
-  // Müziği Core 0 üzerinden güvenle durdur ve bitmesini bekle
+  // Müziği Core 0 üzerinden güvenle durdur ve bitmesini bekle (en fazla 500ms timeout)
   muzikDurdurIstegi = true;
-  while (muzikDurdurIstegi) {
+  unsigned long waitStart = millis();
+  while (muzikDurdurIstegi && (millis() - waitStart < 500)) {
     delay(10);
   }
+  muzikDurdurIstegi = false;
   VeriGonderimi();
   // Serial.println("5 saniye bekleme...");
   delay(5000);
@@ -366,9 +361,8 @@ void TaskCore0Kodu(void *pvParameters) {
       }
     }
 
-    // MP3 çalma işlemi için çok kısa bir gecikme veya hiç gecikme olmamalıdır.
-    // Ancak Watchdog Timer'ı tetiklememek için çok kısa bir delay ekliyoruz.
-    vTaskDelay(1 / portTICK_PERIOD_MS);
+    // FreeRTOS IDLE0 görevine her turda kesin nefes aldır (Task Watchdog koruması)
+    vTaskDelay(pdMS_TO_TICKS(5));
   }
 }
 
@@ -442,7 +436,7 @@ void TaskCore1Kodu(void *pvParameters) {
         firca4Ldr = stabilAnalogOku(FIRCA4_PIN, 5, 20);
         firca5Ldr = stabilAnalogOku(FIRCA5_PIN, 5, 20);
         ortamLdr  = stabilAnalogOku(ORTAMLDR_PIN, 5, 20);
-        LdrEsikDeger = ortamLdr + 500;
+        LdrEsikDeger = LDR_ESIK_DEGER;
         sensorDataReady = true;
 
         Serial.print("[KAPAK] 5 Kontrol Tamamlandı -> Ortam: ");
@@ -464,14 +458,14 @@ void TaskCore1Kodu(void *pvParameters) {
       firca4Ldr = analogRead(FIRCA4_PIN);
       firca5Ldr = analogRead(FIRCA5_PIN);
       ortamLdr = analogRead(ORTAMLDR_PIN);
-      LdrEsikDeger = ortamLdr + 500;
+      LdrEsikDeger = LDR_ESIK_DEGER;
       sensorDataReady = true;
     }
 
     // Kapak Açıkken Fırça Kontrolü
+    // Işık arttıkça LDR ADC değeri azalır: <= 800 aydınlık (fırça dışarıda), > 800 karanlık (fırça yerinde)
     if (kapakAcik && sensorDataReady) {
-      int thrFirca = min(3800, (int)ortamLdr + 1500);
-      int thrFirca5 = min(3500, (int)ortamLdr + 1000);
+      int thrFirca = LDR_ESIK_DEGER;
 
       herhangiBirFircaDisarida = false;
       secilenFircaNo = 0;
@@ -500,7 +494,7 @@ void TaskCore1Kodu(void *pvParameters) {
         klasor = "/4";
         secilenFircaNo = 4;
         herhangiBirFircaDisarida = true;
-      } else if (firca5Ldr <= thrFirca5) {
+      } else if (firca5Ldr <= thrFirca) {
         // Serial.println("Fırça 5 Dışarıda");
         fircaId = "Firca5";
         klasor = "/5";
@@ -531,8 +525,8 @@ void TaskCore1Kodu(void *pvParameters) {
         // Yalnızca fırçalama aktifken (fırça dışarıdayken) fırçanın yerine konup konmadığını kontrol et
         if (fircalamaAktif) {
           // 1. Kapak tamamen açık olmalı!
-          // 2. Ortam LDR'si aydınlık olmalı (kapak kapanırken ortam kararır, bu sahte algılamayı önler!)
-          if (kapakAcik && ortamLdr < 2000) {
+          // 2. Ortam LDR'si tam karanlık olmamalı (< 2000; kapak kapanırken ortam kararır, bu sahte algılamayı önler!)
+          if (kapakAcik && ortamLdr < ORTAM_KARANLIK_ESIK) {
             fircalarYerindeSayaci++;
           } else {
             fircalarYerindeSayaci = 0;
@@ -544,9 +538,9 @@ void TaskCore1Kodu(void *pvParameters) {
             // Çıkarılmış olan fırçanın LDR sensörünü 5 kez stabil ölçerek gerçekten yerine oturduğunu teyit et
             bool gercektenYerinde = true;
 
-            // Ortam ışığı hala aydınlık mı ve kapak hala açık mı? (Kapak kapanıyorsa ortam kararır!)
+            // Ortam ışığı hala aydınlık/normal mi (< 2000) ve kapak hala açık mı?
             int guncelOrtam = stabilAnalogOku(ORTAMLDR_PIN, 5, 20);
-            if (guncelOrtam > 2000 || !kapakAcik) {
+            if (guncelOrtam >= ORTAM_KARANLIK_ESIK || !kapakAcik) {
               gercektenYerinde = false; // Kapak kapanıyor veya ortam karanlık, sahte algılama!
               Serial.println("[FIRCA] Yanlış alarm: Ortam karanlık veya kapak kapanıyor, fırça yerine kondu sayılamaz!");
             }
@@ -557,7 +551,7 @@ void TaskCore1Kodu(void *pvParameters) {
                                (sonGosterilenFircaNo == 3) ? FIRCA3_PIN :
                                (sonGosterilenFircaNo == 4) ? FIRCA4_PIN : FIRCA5_PIN;
               int dogrulamaDegeri = stabilAnalogOku(kontrolPin, 5, 20);
-              int esik = min(3800, (sonGosterilenFircaNo == 5) ? (guncelOrtam + 1000) : (guncelOrtam + 1500));
+              int esik = LDR_ESIK_DEGER;
               if (dogrulamaDegeri <= esik) {
                 gercektenYerinde = false; // Fırça hala dışarıda, yanlış alarm!
                 Serial.println("[FIRCA] Yanlış alarm: Fırça hala dışarıda, veri gönderimi yapılmıyor.");
@@ -570,9 +564,11 @@ void TaskCore1Kodu(void *pvParameters) {
               havaiFisekAktif = false;
               sonGosterilenFircaNo = 0;
               muzikDurdurIstegi = true; // Core 0'a güvenli müzik durdurma komutu
-              while (muzikDurdurIstegi) {
+              unsigned long stopWait = millis();
+              while (muzikDurdurIstegi && (millis() - stopWait < 500)) {
                 delay(10);
               }
+              muzikDurdurIstegi = false;
 
               // Kum saatini durdur ve dot matrix ekranları söndür
               if (calis) {
@@ -909,14 +905,14 @@ void TaskCore1Kodu(void *pvParameters) {
     }
     /*Kum saati bitis*/
 
-    vTaskDelay(50 / portTICK_PERIOD_MS);
+    vTaskDelay(pdMS_TO_TICKS(50));
   }
 }
 
 // ---------- Loop ----------
 void loop() {
-
-  // Genellikle boş bırakılır, çünkü FreeRTOS görevleri kullanılıyor
+  // loopTask CPU 1'i %100 meşgul etmesin ve IDLE1 beslensin diye bekleme
+  vTaskDelay(pdMS_TO_TICKS(100));
 }
 
 void bilgileriYazdir() {

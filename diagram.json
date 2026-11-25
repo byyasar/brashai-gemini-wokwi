@@ -1,0 +1,1337 @@
+{
+  "version": 1,
+  "author": "Yaşar Baykuş",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "wokwi-esp32-devkit-v1",
+      "id": "esp",
+      "top": 167.3,
+      "left": 435.0,
+      "rotate": 90.0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r1",
+      "top": 340.0,
+      "left": -320.0,
+      "rotate": 90.0,
+      "attrs": {
+        "value": "1000"
+      }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn1",
+      "top": 60.0,
+      "left": -280.0,
+      "attrs": {
+        "color": "green",
+        "label": "Başla",
+        "xray": "1"
+      }
+    },
+    {
+      "type": "wokwi-vcc",
+      "id": "vcc1",
+      "top": 120.0,
+      "left": 560.0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-gnd",
+      "id": "gnd1",
+      "top": 40.0,
+      "left": -40.0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r2",
+      "top": 340.0,
+      "left": -280.0,
+      "rotate": 90.0,
+      "attrs": {
+        "value": "1000"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r3",
+      "top": 340.0,
+      "left": -240.0,
+      "rotate": 90.0,
+      "attrs": {
+        "value": "1000"
+      }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn2",
+      "top": 120.0,
+      "left": -280.0,
+      "attrs": {
+        "label": "Durdur",
+        "color": "green",
+        "xray": "1"
+      }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn3",
+      "top": 200.0,
+      "left": -280.0,
+      "attrs": {
+        "xray": "1",
+        "color": "green",
+        "label": "Yenile"
+      }
+    },
+    {
+      "type": "wokwi-photoresistor-sensor",
+      "id": "ldr1",
+      "top": 240.0,
+      "left": -180.0,
+      "attrs": {
+        "label": "Fırça1"
+      }
+    },
+    {
+      "type": "wokwi-vcc",
+      "id": "vcc2",
+      "top": 480.0,
+      "left": 500.0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-gnd",
+      "id": "gnd2",
+      "top": 660.0,
+      "left": 280.0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-photoresistor-sensor",
+      "id": "ldr2",
+      "top": 320.0,
+      "left": -180.0,
+      "attrs": {
+        "label": "Fırça2"
+      }
+    },
+    {
+      "type": "wokwi-photoresistor-sensor",
+      "id": "ldr3",
+      "top": 400.0,
+      "left": -180.0,
+      "attrs": {
+        "label": "Fırça3"
+      }
+    },
+    {
+      "type": "wokwi-photoresistor-sensor",
+      "id": "ldr4",
+      "top": 480.0,
+      "left": -180.0,
+      "attrs": {
+        "label": "Fırça4"
+      }
+    },
+    {
+      "type": "wokwi-photoresistor-sensor",
+      "id": "ldr5",
+      "top": 560.0,
+      "left": -180.0,
+      "attrs": {
+        "label": "Fırça5"
+      }
+    },
+    {
+      "type": "wokwi-photoresistor-sensor",
+      "id": "ldr6",
+      "top": 640.0,
+      "left": -180.0,
+      "attrs": {
+        "label": "OrtamLdr"
+      }
+    },
+    {
+      "type": "wokwi-slide-switch",
+      "id": "sw1",
+      "top": 620.0,
+      "left": 400.0,
+      "rotate": 270.0,
+      "attrs": {
+        "label": "Kapak"
+      }
+    },
+    {
+      "type": "wokwi-vcc",
+      "id": "vcc3",
+      "top": 580.0,
+      "left": 460.0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-gnd",
+      "id": "gnd3",
+      "top": 660.0,
+      "left": 480.0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-relay-module",
+      "id": "relay1",
+      "top": 420.0,
+      "left": 420.0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-vcc",
+      "id": "vcc4",
+      "top": 480.76,
+      "left": 614.4,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-gnd",
+      "id": "gnd4",
+      "top": 540.0,
+      "left": 580.0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-max7219-matrix",
+      "id": "matrix1",
+      "top": 293.47,
+      "left": 170.19,
+      "rotate": 45.0,
+      "attrs": {
+        "chain": "1"
+      }
+    },
+    {
+      "type": "wokwi-max7219-matrix",
+      "id": "matrix2",
+      "top": 399.07,
+      "left": 170.19,
+      "rotate": 45.0,
+      "attrs": {
+        "chain": "1"
+      }
+    },
+    {
+      "type": "wokwi-vcc",
+      "id": "vcc5",
+      "top": 211.96,
+      "left": 288.0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-gnd",
+      "id": "gnd5",
+      "top": 499.2,
+      "left": 287.4,
+      "attrs": {}
+    },
+    {
+      "type": "chip-vs1053",
+      "id": "vs1053",
+      "top": -110.0,
+      "left": 100.0,
+      "attrs": {
+        "gain": "100"
+      }
+    },
+    {
+      "type": "wokwi-microsd-card",
+      "id": "sd1",
+      "top": -90.0,
+      "left": -140.0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-vcc",
+      "id": "vcc_audio",
+      "top": -150.0,
+      "left": 40.0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-gnd",
+      "id": "gnd_audio",
+      "top": 90.0,
+      "left": 40.0,
+      "attrs": {}
+    },
+    {
+      "type": "chip-fan",
+      "id": "fan1",
+      "top": 400.0,
+      "left": 580.0,
+      "attrs": {
+        "target_rpm": "2000",
+        "test_spin": "0"
+      }
+    },
+    {
+      "type": "wokwi-vcc",
+      "id": "vcc_fan",
+      "top": 380.0,
+      "left": 480.0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-text",
+      "id": "text1",
+      "top": 200.0,
+      "left": -180.0,
+      "attrs": {
+        "text": "Kapak"
+      }
+    },
+    {
+      "type": "wokwi-neopixel",
+      "id": "rgb2",
+      "top": 120.0,
+      "left": -140.0,
+      "rotate": 90.0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-neopixel",
+      "id": "rgb1",
+      "top": 120.0,
+      "left": -120.0,
+      "rotate": 90.0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-neopixel",
+      "id": "rgb3",
+      "top": 120.0,
+      "left": -100.0,
+      "rotate": 90.0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-neopixel",
+      "id": "rgb4",
+      "top": 120.0,
+      "left": -100.0,
+      "rotate": 90.0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-neopixel",
+      "id": "rgb5",
+      "top": 120.0,
+      "left": -80.0,
+      "rotate": 90.0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-neopixel",
+      "id": "rgb6",
+      "top": 120.0,
+      "left": -60.0,
+      "rotate": 90.0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-neopixel",
+      "id": "rgb7",
+      "top": 120.0,
+      "left": -40.0,
+      "rotate": 90.0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-neopixel",
+      "id": "rgb8",
+      "top": 120.0,
+      "left": -20.0,
+      "rotate": 90.0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-gnd",
+      "id": "gnd7",
+      "top": 200.0,
+      "left": -60.0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-vcc",
+      "id": "vcc7",
+      "top": 60.0,
+      "left": -140.0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-neopixel",
+      "id": "rgb9",
+      "top": 120.0,
+      "left": 0.0,
+      "rotate": 90.0,
+      "attrs": {}
+    }
+  ],
+  "connections": [
+    [
+      "esp:TX0",
+      "$serialMonitor:RX",
+      "",
+      []
+    ],
+    [
+      "esp:RX0",
+      "$serialMonitor:TX",
+      "",
+      []
+    ],
+    [
+      "r1:2",
+      "gnd1:GND",
+      "black",
+      [
+        "v9.1",
+        "h98.5",
+        "v-360",
+        "h168"
+      ]
+    ],
+    [
+      "btn1:2.l",
+      "vcc1:VCC",
+      "red",
+      [
+        "h-8",
+        "v88",
+        "h864"
+      ]
+    ],
+    [
+      "esp:D22",
+      "btn1:1.l",
+      "#8f4814",
+      [
+        "v18.9",
+        "h-232.5",
+        "v-144",
+        "h-624",
+        "v-120"
+      ]
+    ],
+    [
+      "r2:2",
+      "gnd1:GND",
+      "black",
+      [
+        "h-13.6",
+        "v-122.9",
+        "h60",
+        "v-240",
+        "h180"
+      ]
+    ],
+    [
+      "r3:2",
+      "gnd1:GND",
+      "black",
+      [
+        "v21.1",
+        "h-101.6",
+        "v-396",
+        "h288"
+      ]
+    ],
+    [
+      "r1:1",
+      "btn1:1.l",
+      "green",
+      [
+        "v-112.1",
+        "h-33.5",
+        "v-132"
+      ]
+    ],
+    [
+      "esp:VP",
+      "btn2:1.l",
+      "magenta",
+      [
+        "v-64.8",
+        "h-736.5",
+        "v-108",
+        "h-108",
+        "v84"
+      ]
+    ],
+    [
+      "btn3:1.l",
+      "esp:VN",
+      "green",
+      [
+        "h-8",
+        "v-21",
+        "h108",
+        "v-24",
+        "h732"
+      ]
+    ],
+    [
+      "r2:1",
+      "btn2:1.l",
+      "green",
+      [
+        "v-16.1",
+        "h-49.6",
+        "v-168"
+      ]
+    ],
+    [
+      "r3:1",
+      "btn3:1.l",
+      "green",
+      [
+        "v-52.1",
+        "h-77.6",
+        "v-48"
+      ]
+    ],
+    [
+      "btn2:2.l",
+      "btn1:2.l",
+      "red",
+      [
+        "h-8",
+        "v-56"
+      ]
+    ],
+    [
+      "btn3:2.l",
+      "btn2:2.l",
+      "red",
+      [
+        "h-8",
+        "v-76"
+      ]
+    ],
+    [
+      "esp:D25",
+      "ldr1:AO",
+      "green",
+      [
+        "v-16.8",
+        "h-487.2",
+        "v84"
+      ]
+    ],
+    [
+      "esp:D4",
+      "ldr2:AO",
+      "green",
+      [
+        "v30.9",
+        "h-170.5",
+        "v-96",
+        "h-276",
+        "v108"
+      ]
+    ],
+    [
+      "esp:D34",
+      "ldr3:AO",
+      "green",
+      [
+        "v-28.8",
+        "h-261.4",
+        "v48",
+        "h-240",
+        "v204"
+      ]
+    ],
+    [
+      "esp:D26",
+      "ldr4:AO",
+      "green",
+      [
+        "v-16.8",
+        "h-117.5",
+        "v348",
+        "h-384"
+      ]
+    ],
+    [
+      "esp:D12",
+      "ldr5:AO",
+      "green",
+      [
+        "v-16.8",
+        "h-100.1",
+        "v396"
+      ]
+    ],
+    [
+      "esp:D27",
+      "ldr6:AO",
+      "green",
+      [
+        "v-16.8",
+        "h-131.7",
+        "v444",
+        "h-336",
+        "v36"
+      ]
+    ],
+    [
+      "ldr1:GND",
+      "gnd2:GND",
+      "black",
+      [
+        "h152",
+        "v370",
+        "h156"
+      ]
+    ],
+    [
+      "ldr2:GND",
+      "gnd2:GND",
+      "black",
+      [
+        "h140",
+        "v278",
+        "h168"
+      ]
+    ],
+    [
+      "ldr3:GND",
+      "gnd2:GND",
+      "black",
+      [
+        "h128",
+        "v186",
+        "h180"
+      ]
+    ],
+    [
+      "ldr4:GND",
+      "gnd2:GND",
+      "black",
+      [
+        "h116",
+        "v82",
+        "h192"
+      ]
+    ],
+    [
+      "ldr5:GND",
+      "gnd2:GND",
+      "black",
+      [
+        "h104",
+        "v74",
+        "h168",
+        "v-12",
+        "h36"
+      ]
+    ],
+    [
+      "ldr6:GND",
+      "gnd2:GND",
+      "black",
+      [
+        "h272",
+        "v-18",
+        "h36"
+      ]
+    ],
+    [
+      "ldr1:VCC",
+      "vcc2:VCC",
+      "red",
+      [
+        "h56",
+        "v284",
+        "h468"
+      ]
+    ],
+    [
+      "ldr2:VCC",
+      "vcc2:VCC",
+      "red",
+      [
+        "h20",
+        "v228",
+        "h504"
+      ]
+    ],
+    [
+      "ldr3:VCC",
+      "vcc2:VCC",
+      "red",
+      [
+        "h32",
+        "v160",
+        "h420",
+        "v-60",
+        "h72"
+      ]
+    ],
+    [
+      "ldr4:VCC",
+      "vcc2:VCC",
+      "red",
+      [
+        "h104",
+        "v32",
+        "h180",
+        "v12",
+        "h48",
+        "v-12",
+        "h192"
+      ]
+    ],
+    [
+      "ldr5:VCC",
+      "vcc2:VCC",
+      "red",
+      [
+        "h32",
+        "v120",
+        "h492"
+      ]
+    ],
+    [
+      "ldr6:VCC",
+      "vcc2:VCC",
+      "red",
+      [
+        "h20",
+        "v52",
+        "h516",
+        "v-192",
+        "h-12"
+      ]
+    ],
+    [
+      "sw1:3",
+      "vcc3:VCC",
+      "red",
+      [
+        "h47.4",
+        "v-4"
+      ]
+    ],
+    [
+      "sw1:1",
+      "gnd3:GND",
+      "black",
+      [
+        "h59.4",
+        "v1"
+      ]
+    ],
+    [
+      "esp:D21",
+      "sw1:2",
+      "magenta",
+      [
+        "v90.9",
+        "h36.4",
+        "v228"
+      ]
+    ],
+    [
+      "esp:D2",
+      "relay1:IN",
+      "green",
+      [
+        "v90.9",
+        "h-52.1",
+        "v48"
+      ]
+    ],
+    [
+      "relay1:GND",
+      "gnd4:GND",
+      "black",
+      [
+        "h-13",
+        "v55.6",
+        "h84",
+        "v12",
+        "h108"
+      ]
+    ],
+    [
+      "relay1:VCC",
+      "vcc4:VCC",
+      "red",
+      [
+        "h-25",
+        "v53.3",
+        "h96",
+        "v36",
+        "h132"
+      ]
+    ],
+    [
+      "matrix1:CLK",
+      "matrix2:CLK",
+      "purple",
+      [
+        "h-53.9",
+        "v102.5"
+      ]
+    ],
+    [
+      "matrix1:CS",
+      "matrix2:CS",
+      "violet",
+      [
+        "h-36.7",
+        "v109.3"
+      ]
+    ],
+    [
+      "matrix1:GND",
+      "matrix2:GND",
+      "black",
+      []
+    ],
+    [
+      "matrix1:DOUT",
+      "matrix2:DIN",
+      "green",
+      [
+        "h-39",
+        "v27"
+      ]
+    ],
+    [
+      "matrix1:V+",
+      "matrix2:V+",
+      "red",
+      []
+    ],
+    [
+      "matrix2:GND.2",
+      "gnd5:GND",
+      "black",
+      [
+        "h26.9",
+        "v-1.5"
+      ]
+    ],
+    [
+      "matrix2:V+.2",
+      "vcc5:VCC",
+      "green",
+      [
+        "h32.1",
+        "v-210.7",
+        "h-12"
+      ]
+    ],
+    [
+      "matrix1:DIN",
+      "esp:D14",
+      "green",
+      [
+        "v-147.9",
+        "h280.5"
+      ]
+    ],
+    [
+      "esp:D13",
+      "matrix2:CLK",
+      "green",
+      [
+        "v-88.8",
+        "h-343",
+        "v276"
+      ]
+    ],
+    [
+      "esp:D15",
+      "matrix2:CS",
+      "green",
+      [
+        "v42.9",
+        "h-127",
+        "v180",
+        "h-48",
+        "v-24",
+        "h-132",
+        "v-108"
+      ]
+    ],
+    [
+      "rgb2:DOUT",
+      "rgb1:DIN",
+      "green",
+      [
+        "v-11.8",
+        "h-22.1",
+        "v48",
+        "h48"
+      ]
+    ],
+    [
+      "rgb2:VDD",
+      "vcc7:VCC",
+      "green",
+      [
+        "v-23.8",
+        "h-8.6"
+      ]
+    ],
+    [
+      "rgb1:VDD",
+      "vcc7:VCC",
+      "green",
+      [
+        "v-23.8",
+        "h-28.6"
+      ]
+    ],
+    [
+      "rgb3:VDD",
+      "vcc7:VCC",
+      "green",
+      [
+        "v-23.8",
+        "h-48.6"
+      ]
+    ],
+    [
+      "rgb4:VDD",
+      "vcc7:VCC",
+      "green",
+      [
+        "v-23.8",
+        "h-48.6"
+      ]
+    ],
+    [
+      "rgb5:VDD",
+      "vcc7:VCC",
+      "green",
+      [
+        "v-23.8",
+        "h-68.6"
+      ]
+    ],
+    [
+      "rgb6:VDD",
+      "vcc7:VCC",
+      "green",
+      [
+        "v-11.8",
+        "h-88.6"
+      ]
+    ],
+    [
+      "rgb7:VDD",
+      "vcc7:VCC",
+      "green",
+      [
+        "v-23.8",
+        "h-108.6"
+      ]
+    ],
+    [
+      "rgb8:VDD",
+      "vcc7:VCC",
+      "green",
+      [
+        "v-35.8",
+        "h-92.6",
+        "v12",
+        "h-36"
+      ]
+    ],
+    [
+      "rgb1:VSS",
+      "gnd7:GND",
+      "green",
+      [
+        "v52.3",
+        "h65.9"
+      ]
+    ],
+    [
+      "rgb3:VSS",
+      "gnd7:GND",
+      "green",
+      [
+        "v52.3",
+        "h45.9"
+      ]
+    ],
+    [
+      "rgb4:VSS",
+      "gnd7:GND",
+      "green",
+      [
+        "v52.3",
+        "h45.9"
+      ]
+    ],
+    [
+      "rgb5:VSS",
+      "gnd7:GND",
+      "green",
+      [
+        "v52.3",
+        "h25.9"
+      ]
+    ],
+    [
+      "rgb6:VSS",
+      "gnd7:GND",
+      "green",
+      []
+    ],
+    [
+      "rgb7:VSS",
+      "gnd7:GND",
+      "green",
+      [
+        "v52.3",
+        "h-14.1"
+      ]
+    ],
+    [
+      "rgb8:VSS",
+      "gnd7:GND",
+      "green",
+      [
+        "v52.3",
+        "h-34.1"
+      ]
+    ],
+    [
+      "rgb9:VSS",
+      "gnd7:GND",
+      "green",
+      [
+        "v52.3",
+        "h-54.1"
+      ]
+    ],
+    [
+      "rgb9:VDD",
+      "vcc7:VCC",
+      "green",
+      [
+        "v-47.8",
+        "h-112.6",
+        "v24",
+        "h-36"
+      ]
+    ],
+    [
+      "rgb1:DOUT",
+      "rgb3:DIN",
+      "green",
+      [
+        "v-11.8",
+        "h-54.1",
+        "v48",
+        "h84"
+      ]
+    ],
+    [
+      "rgb3:DOUT",
+      "rgb4:DIN",
+      "green",
+      [
+        "h9.9"
+      ]
+    ],
+    [
+      "rgb4:DOUT",
+      "rgb5:DIN",
+      "green",
+      [
+        "v-11.8",
+        "h-62.1",
+        "v48",
+        "h96"
+      ]
+    ],
+    [
+      "rgb5:DOUT",
+      "rgb6:DIN",
+      "green",
+      [
+        "v36.3",
+        "h25.9"
+      ]
+    ],
+    [
+      "rgb6:DOUT",
+      "rgb7:DIN",
+      "green",
+      [
+        "v-11.8",
+        "h29.9"
+      ]
+    ],
+    [
+      "rgb7:DOUT",
+      "rgb8:DIN",
+      "green",
+      [
+        "v-11.8",
+        "h33.9"
+      ]
+    ],
+    [
+      "rgb8:DOUT",
+      "rgb9:DIN",
+      "green",
+      [
+        "v-11.8",
+        "h37.9",
+        "v-36",
+        "h60",
+        "v72",
+        "h-48",
+        "v12",
+        "h-24"
+      ]
+    ],
+    [
+      "esp:TX2",
+      "rgb2:DIN",
+      "green",
+      [
+        "v54.9",
+        "h-153.5",
+        "v-120",
+        "h-72",
+        "v-36",
+        "h-288",
+        "v-60",
+        "h-96"
+      ]
+    ],
+    [
+      "rgb2:VSS",
+      "gnd7:GND",
+      "green",
+      [
+        "v64.3",
+        "h61.9",
+        "v-12",
+        "h24"
+      ]
+    ],
+    [
+      "esp:D18",
+      "vs1053:SCK",
+      "blue",
+      [
+        "v30.9",
+        "h91.2",
+        "v-372",
+        "h-516",
+        "v-60"
+      ]
+    ],
+    [
+      "esp:D18",
+      "sd1:SCK",
+      "blue",
+      [
+        "v42.9",
+        "h103.2",
+        "v-372",
+        "h-660",
+        "v-36"
+      ]
+    ],
+    [
+      "esp:D23",
+      "vs1053:MOSI",
+      "orange",
+      [
+        "v18.9",
+        "h57.5",
+        "v-336",
+        "h-552",
+        "v-72"
+      ]
+    ],
+    [
+      "esp:D23",
+      "sd1:DI",
+      "orange",
+      [
+        "v18.9",
+        "h69.5",
+        "v-324",
+        "h-648",
+        "v-48"
+      ]
+    ],
+    [
+      "esp:D19",
+      "vs1053:MISO",
+      "yellow",
+      [
+        "v54.9",
+        "h129.7",
+        "v-492",
+        "h-564",
+        "v60"
+      ]
+    ],
+    [
+      "esp:D19",
+      "sd1:DO",
+      "yellow",
+      [
+        "v66.9",
+        "h141.7",
+        "v-360",
+        "h-660",
+        "v-96"
+      ]
+    ],
+    [
+      "esp:D5",
+      "sd1:CS",
+      "cyan",
+      [
+        "v18.9",
+        "h-163.2",
+        "v-300",
+        "h-324",
+        "v-60"
+      ]
+    ],
+    [
+      "esp:D32",
+      "vs1053:XCS",
+      "magenta",
+      [
+        "v-172.8",
+        "h-434.3",
+        "v-96"
+      ]
+    ],
+    [
+      "esp:D33",
+      "vs1053:XDCS",
+      "violet",
+      [
+        "v-316.8",
+        "h-4.8"
+      ]
+    ],
+    [
+      "esp:D35",
+      "vs1053:DREQ",
+      "white",
+      [
+        "v-304.8",
+        "h-323.6",
+        "v-12"
+      ]
+    ],
+    [
+      "vs1053:XRST",
+      "vcc_audio:VCC",
+      "red",
+      [
+        "h8",
+        "v-52"
+      ]
+    ],
+    [
+      "vs1053:VCC",
+      "vcc_audio:VCC",
+      "red",
+      [
+        "h-40",
+        "v4"
+      ]
+    ],
+    [
+      "sd1:VCC",
+      "vcc_audio:VCC",
+      "red",
+      [
+        "h123.3",
+        "v-5.6"
+      ]
+    ],
+    [
+      "vs1053:GND",
+      "gnd_audio:GND",
+      "black",
+      [
+        "h-40",
+        "v-6"
+      ]
+    ],
+    [
+      "sd1:GND",
+      "gnd_audio:GND",
+      "black",
+      [
+        "h111.3",
+        "v133.5",
+        "h12"
+      ]
+    ],
+    [
+      "vcc_fan:VCC",
+      "relay1:COM",
+      "red",
+      [
+        "h34",
+        "v4"
+      ]
+    ],
+    [
+      "relay1:NO",
+      "fan1:VCC",
+      "red",
+      [
+        "h30.3",
+        "v-39.3"
+      ]
+    ],
+    [
+      "fan1:GND",
+      "gnd4:GND",
+      "black",
+      [
+        "h-16",
+        "v28",
+        "h36"
+      ]
+    ],
+    [
+      "relay1:IN",
+      "fan1:IN",
+      "green",
+      [
+        "h-37",
+        "v93.8",
+        "h168",
+        "v24",
+        "h108",
+        "v-168"
+      ]
+    ]
+  ],
+  "dependencies": {}
+}

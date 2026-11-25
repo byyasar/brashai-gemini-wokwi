@@ -1,0 +1,27 @@
+{
+  "name": "SD Card Breakout Board",
+  "author": "BrashAI",
+  "pins": [
+    "VCC",
+    "GND",
+    "CS",
+    "SCK",
+    "MOSI",
+    "MISO",
+    "CD"
+  ],
+  "display": {
+    "width": 128,
+    "height": 80
+  },
+  "controls": [
+    {
+      "id": "card_present",
+      "label": "Kart Takılı (0/1)",
+      "type": "range",
+      "min": 0,
+      "max": 1,
+      "step": 1
+    }
+  ]
+}

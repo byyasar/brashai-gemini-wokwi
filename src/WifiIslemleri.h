@@ -8,10 +8,10 @@
 #include <WiFi.h>
 
 // Global değişken tanımları
-String wifi_ssid = "";
-String wifi_password = "";
-String supabase_url = "";
-String supabase_key = "";
+String wifi_ssid = DEFAULT_SSID;
+String wifi_password = DEFAULT_PASS;
+String supabase_url = DEFAULT_SUPABASE_URL;
+String supabase_key = DEFAULT_SUPABASE_KEY;
 String cihazId = "Cihaz1";
 
 bool wifiStatus = false;

@@ -1,0 +1,8 @@
+[package]
+name = "wokwi-api"
+version = "0.1.0"
+edition = "2021"
+description = "Wokwi Custom Chips API ABI katmani ve ortak RGBA grafik yardimcilari"
+
+[lib]
+crate-type = ["rlib"]

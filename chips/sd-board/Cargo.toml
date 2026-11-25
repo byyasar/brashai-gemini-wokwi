@@ -1,0 +1,11 @@
+[package]
+name = "sd-board"
+version = "0.1.0"
+edition = "2021"
+description = "Wokwi SD Kart Gelistirme Karti (pasif SPI izleyici ve gorsel durum ekrani)"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wokwi-api = { path = "../wokwi-api" }

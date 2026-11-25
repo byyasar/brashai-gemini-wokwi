@@ -1,0 +1,12 @@
+[package]
+name = "vs1053"
+version = "0.1.0"
+edition = "2021"
+description = "VLSI VS1053b datasheet uyumlu Wokwi custom ses kodek cipi"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wokwi-api = { path = "../wokwi-api" }
+nanomp3-core = "0.2.0"

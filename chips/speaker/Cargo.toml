@@ -1,0 +1,11 @@
+[package]
+name = "speaker"
+version = "0.1.0"
+edition = "2021"
+description = "Wokwi Hoparlor Gelistirme Karti (canli diyafram animasyonu, stereo VU-metre ve PDM passthrough)"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wokwi-api = { path = "../wokwi-api" }

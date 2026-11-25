@@ -27,6 +27,7 @@ VS1053 mp3(VS1053_CS, VS1053_DCS, VS1053_DREQ, VSPI, VS1053_MOSI, VS1053_MISO,
            VS1053_SCK);
 
 void MuzikDurdurFnc() {
+  Serial.println("[AUDIO_STOP]");
   sarkiDurduruluyor = true;
   sonrakiSarkiyaGec = false;
   hosgeldinizCaliniyor = false;
@@ -34,7 +35,7 @@ void MuzikDurdurFnc() {
     mp3.stop_mp3client();
   }
   isPlaying = false;
-  delay(100);
+  vTaskDelay(pdMS_TO_TICKS(50));
   sarkiDurduruluyor = false;
 }
 

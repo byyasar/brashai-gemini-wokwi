@@ -16,3 +16,11 @@ src/config.h
 .vscode/launch.json
 .vscode/ipch
 .DS_Store
+
+# Rust / Wokwi custom chip build artifacts
+chips/target/
+
+# Python cache & temporary diagram copies
+__pycache__/
+*.pyc
+diagram copy*.json
